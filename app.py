@@ -491,21 +491,24 @@ with tab_cal:
     ))
 
     fig_cal.update_layout(
-        **LAYOUT,
+        paper_bgcolor="#111318",
+        plot_bgcolor="#111318",
         height=max(280, n_weeks * 90),
+        margin=dict(l=10, r=10, t=40, b=10),
         xaxis=dict(
             tickvals=list(range(7)),
             ticktext=day_names,
             side="top",
             gridcolor="transparent",
             linecolor="transparent",
+            tickfont=dict(color="#94a3b8", size=11),
         ),
         yaxis=dict(
             showticklabels=False,
             gridcolor="transparent",
             linecolor="transparent",
         ),
-        font=dict(color="#f1f5f9", size=12),
+        font=dict(color="#f1f5f9", size=12, family="monospace"),
     )
 
     st.plotly_chart(fig_cal, use_container_width=True)
