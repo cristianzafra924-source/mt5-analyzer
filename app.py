@@ -29,30 +29,35 @@ html, body, [class*="css"] {
 .stApp { background-color: #080a0e; }
 
 div[data-testid="metric-container"] {
-    background: #0c0e14;
-    border: 1px solid #1e2a3a;
-    border-radius: 4px;
-    padding: 14px 16px;
-    border-left: 3px solid #1e3a5f;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 0px;
+    padding: 16px 18px;
+    border-left: 4px solid #0f172a;
+    box-shadow: 2px 2px 0px #e2e8f0;
+    transition: box-shadow 0.15s;
+}
+div[data-testid="metric-container"]:hover {
+    box-shadow: 3px 3px 0px #cbd5e1;
 }
 div[data-testid="metric-container"] label {
-    color: #64748b !important;
+    color: #94a3b8 !important;
     font-size: 10px !important;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-weight: 400;
+    letter-spacing: 0.12em;
+    font-weight: 500;
 }
 div[data-testid="stMetricValue"] {
     font-family: 'JetBrains Mono', monospace !important;
     font-size: 22px !important;
-    font-weight: 400 !important;
-    color: #e2e8f0 !important;
+    font-weight: 500 !important;
+    color: #0f172a !important;
     letter-spacing: -0.02em;
 }
 div[data-testid="stMetricDelta"] {
     font-family: 'JetBrains Mono', monospace !important;
     font-size: 11px !important;
-    font-weight: 300 !important;
+    font-weight: 400 !important;
 }
 
 .stTabs [data-baseweb="tab-list"] {
@@ -97,17 +102,23 @@ hr { border-color: #161b27; border-width: 0.5px; }
 .main-sub { color: #64748b; font-size: 12px; margin-bottom: 28px; font-weight: 300; letter-spacing: 0.06em; }
 
 .section-label {
-    font-size: 9px; font-weight: 400; letter-spacing: 0.15em;
-    text-transform: uppercase; color: #2d3748; margin: 20px 0 8px;
+    font-size: 9px; font-weight: 600; letter-spacing: 0.15em;
+    text-transform: uppercase; color: #94a3b8; margin: 24px 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .alumno-bar {
-    background: #0c0e14; border: 1px solid #1e2a3a;
-    border-radius: 4px; padding: 12px 16px; margin-bottom: 20px;
-    border-left: 3px solid #2dd4bf;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 0px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    border-left: 4px solid #0f172a;
+    box-shadow: 2px 2px 0px #e2e8f0;
 }
-.alumno-name { font-size: 14px; font-weight: 300; color: #94a3b8; letter-spacing: 0.04em; }
-.alumno-meta { font-size: 10px; color: #2d3748; margin-top: 4px; font-weight: 300; letter-spacing: 0.04em; }
+.alumno-name { font-size: 15px; font-weight: 500; color: #0f172a; letter-spacing: 0.02em; }
+.alumno-meta { font-size: 11px; color: #94a3b8; margin-top: 4px; font-weight: 300; letter-spacing: 0.02em; }
 </style>
 """, unsafe_allow_html=True)
 
