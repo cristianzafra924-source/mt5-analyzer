@@ -93,7 +93,7 @@ hr { border-color: #161b27; border-width: 0.5px; }
     text-transform: uppercase;
     margin-bottom: 4px;
 }
-.main-sub { color: #2d3748; font-size: 11px; margin-bottom: 28px; font-weight: 300; letter-spacing: 0.04em; }
+.main-sub { color: #64748b; font-size: 12px; margin-bottom: 28px; font-weight: 300; letter-spacing: 0.06em; }
 
 .section-label {
     font-size: 9px; font-weight: 400; letter-spacing: 0.15em;
@@ -226,7 +226,9 @@ GREEN = "#22c55e"; RED = "#ef4444"; BLUE = "#3b82f6"; MUTED = "#475569"
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 # Dark/Light mode toggle
-dark_mode = st.sidebar.toggle("🌙 Modo oscuro", value=True)
+col_logo, col_toggle = st.columns([6,1])
+with col_toggle:
+    dark_mode = st.toggle("🌙", value=True, help="Modo oscuro / claro")
 
 if not dark_mode:
     st.markdown("""<style>
@@ -247,7 +249,7 @@ st.markdown(f'''
 <div style="text-align:center;padding:32px 0 24px;">
   <img src="data:image/jpeg;base64,{{LOGO_B64}}" style="width:120px;height:120px;border-radius:16px;object-fit:cover;margin-bottom:16px;display:block;margin-left:auto;margin-right:auto;"/>
   <div style="font-family:Inter,sans-serif;font-size:22px;font-weight:300;color:#94a3b8;letter-spacing:0.1em;text-transform:uppercase;">CRZ Trader</div>
-  <div style="font-size:11px;color:#2d3748;margin-top:6px;letter-spacing:0.04em;">Analizador de Historial MT5</div>
+  <div style="font-size:12px;color:#64748b;margin-top:6px;letter-spacing:0.06em;">Analizador de Historial MT5</div>
 </div>
 '''.format(LOGO_B64=LOGO_B64), unsafe_allow_html=True)
 
