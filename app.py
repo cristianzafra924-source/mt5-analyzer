@@ -484,11 +484,8 @@ with tab_cal:
         zmid=0,
         showscale=True,
         colorbar=dict(
-            title="PnL ($)",
-            titlefont=dict(color="#94a3b8"),
+            title=dict(text="PnL ($)", font=dict(color="#94a3b8")),
             tickfont=dict(color="#94a3b8"),
-            bgcolor="#111318",
-            bordercolor="#1e2330",
             thickness=12,
         )
     ))
@@ -631,3 +628,4 @@ with col_dl1:
         file_name=f"MT5_{meta['alumno'].replace(' ','_')}.csv",
         mime="text/csv"
     )
+
