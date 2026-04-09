@@ -461,27 +461,34 @@ with tab_cal:
         for i, day in enumerate(week):
             with cols[i]:
                 if day is None:
-                    st.markdown("<div style='min-height:70px'></div>", unsafe_allow_html=True)
+                    st.markdown("<div style='min-height:86px'></div>", unsafe_allow_html=True)
                 else:
                     pnl = cal_data.get(day)
                     info = ops_data.get(day, {})
                     if pnl is not None:
                         color = "#22c55e" if pnl > 0 else "#ef4444"
-                        border = f"border-top:2px solid {color}"
+                        bg = "rgba(34,197,94,0.08)" if pnl > 0 else "rgba(239,68,68,0.08)"
                         sign = "+" if pnl >= 0 else ""
                         ops_count = info.get("ops", 0)
                         st.markdown(f"""
-                        <div style='background:#111318;border:1px solid #1e2330;{border};
-                             border-radius:8px;padding:8px;min-height:70px;'>
-                          <div style='font-size:11px;color:#475569'>{day}</div>
-                          <div style='font-size:13px;font-weight:600;color:{color}'>{sign}{pnl:,.2f}$</div>
-                          <div style='font-size:10px;color:#475569'>{ops_count} ops</div>
+                        <div style='background:{bg};
+                             border:1.5px solid {color};
+                             border-radius:6px;
+                             padding:10px 8px 8px;
+                             min-height:86px;
+                             box-shadow:0 0 0 0.5px rgba(0,0,0,0.3);'>
+                          <div style='font-size:12px;font-weight:500;color:#94a3b8;margin-bottom:6px;'>{day}</div>
+                          <div style='font-size:14px;font-weight:600;color:{color};line-height:1.2;'>{sign}{pnl:,.2f}$</div>
+                          <div style='font-size:10px;color:#64748b;margin-top:4px;'>{ops_count} op{"s" if ops_count>1 else ""}</div>
                         </div>""", unsafe_allow_html=True)
                     else:
                         st.markdown(f"""
-                        <div style='background:#111318;border:1px solid #1e2330;
-                             border-radius:8px;padding:8px;min-height:70px;'>
-                          <div style='font-size:11px;color:#334155'>{day}</div>
+                        <div style='background:transparent;
+                             border:0.5px solid #1e2330;
+                             border-radius:6px;
+                             padding:10px 8px 8px;
+                             min-height:86px;'>
+                          <div style='font-size:12px;font-weight:400;color:#475569;'>{day}</div>
                         </div>""", unsafe_allow_html=True)
 
 # ── Tab: Gráficas ─────────────────────────────────────────────────────────────
