@@ -381,7 +381,7 @@ with tab_cal:
 
     st.markdown("---")
 
-    # Build calendar
+    # Build calendar using Plotly (works correctly in Streamlit)
     try:
         if "-" in sel_month:
             yr, mo = map(int, sel_month.split("-"))
@@ -403,76 +403,115 @@ with tab_cal:
         day_num = d_date.day if hasattr(d_date, 'day') else int(str(d_date)[-2:])
         ops_data[day_num] = {"ops": int(row["ops"]), "wins": int(row["wins"])}
 
-    # Calendar grid using HTML
     days_in_month = calendar.monthrange(yr, mo)[1]
     first_weekday = calendar.monthrange(yr, mo)[0]  # 0=Mon
 
+    # Build grid: 6 rows x 7 cols
     day_names = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"]
-    cal_html = """<style>
-    .cal-wrap { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-top:8px; }
-    .cal-hdr  { text-align:center; font-size:11px; font-weight:600; color:#64748b;
-                text-transform:uppercase; letter-spacing:.08em; padding:6px 0; }
-    .cal-cell { background:#111318; border:1px solid #1e2330; border-radius:10px;
-                min-height:80px; padding:8px 10px; position:relative; }
-    .cal-cell.empty { background:transparent; border:none; }
-    .cal-cell.weekend { background:#0e1117; }
-    .cal-cell.profit { border-top:2px solid #22c55e; }
-    .cal-cell.loss   { border-top:2px solid #ef4444; }
-    .cal-num  { font-size:11px; color:#475569; margin-bottom:6px; font-family:'DM Mono',monospace; }
-    .cal-pnl  { font-family:'DM Mono',monospace; font-size:14px; font-weight:500; }
-    .cal-ops  { font-size:10px; color:#475569; margin-top:4px; }
-    .cal-dots { display:flex; gap:3px; margin-top:5px; flex-wrap:wrap; }
-    .dot-w    { width:6px; height:6px; border-radius:50%; background:#22c55e; }
-    .dot-l    { width:6px; height:6px; border-radius:50%; background:#ef4444; }
-    </style>
-    <div class="cal-wrap">"""
+    z_vals = []      # PnL value for color
+    text_vals = []   # Text shown in each cell
+    hover_vals = []  # Hover text
+    customdata = []  # Extra data
 
-    for d in day_names:
-        cal_html += f'<div class="cal-hdr">{d}</div>'
+    cell_idx = 0
+    week_row = []
+    week_text = []
+    week_hover = []
 
-    for _ in range(first_weekday):
-        cal_html += '<div class="cal-cell empty"></div>'
+    # Flatten into 6-week grid
+    all_cells_z = []
+    all_cells_text = []
+    all_cells_hover = []
+
+    for i in range(first_weekday):
+        all_cells_z.append(None)
+        all_cells_text.append("")
+        all_cells_hover.append("")
 
     for day in range(1, days_in_month + 1):
-        dow = (first_weekday + day - 1) % 7
-        is_weekend = dow >= 5
         pnl = cal_data.get(day)
         info = ops_data.get(day, {})
-
-        cls = "cal-cell"
-        if is_weekend: cls += " weekend"
-        if pnl is not None:
-            cls += " profit" if pnl > 0 else " loss"
-
-        bg = ""
-        if pnl is not None:
-            alpha = min(abs(pnl) / max(abs(v) for v in cal_data.values() if v), 1) * 0.15
-            bg = f"background:rgba({'34,197,94' if pnl>0 else '239,68,68'},{alpha:.2f});"
-
-        cal_html += f'<div class="{cls}" style="{bg}">'
-        cal_html += f'<div class="cal-num">{day}</div>'
+        ops_count = info.get("ops", 0)
+        wins_count = info.get("wins", 0)
 
         if pnl is not None:
-            color = "#22c55e" if pnl > 0 else "#ef4444"
-            sign  = "+" if pnl >= 0 else ""
-            cal_html += f'<div class="cal-pnl" style="color:{color}">{sign}{pnl:,.2f}$</div>'
-            ops = info.get("ops", 0); wins = info.get("wins", 0); losses = ops - wins
-            cal_html += f'<div class="cal-ops">{ops} op{"s" if ops>1 else ""}</div>'
-            dots = '<div class="cal-dots">'
-            dots += ''.join('<div class="dot-w"></div>' for _ in range(min(wins, 8)))
-            dots += ''.join('<div class="dot-l"></div>' for _ in range(min(losses, 8)))
-            dots += '</div>'
-            cal_html += dots
+            sign = "+" if pnl >= 0 else ""
+            all_cells_z.append(pnl)
+            all_cells_text.append(f"<b>{day}</b><br>{sign}{pnl:,.2f}$<br>{ops_count} ops")
+            all_cells_hover.append(
+                f"<b>Día {day}</b><br>"
+                f"PnL: {sign}{pnl:,.2f}$<br>"
+                f"Operaciones: {ops_count}<br>"
+                f"Ganadoras: {wins_count}<br>"
+                f"Perdedoras: {ops_count - wins_count}"
+            )
+        else:
+            all_cells_z.append(None)
+            all_cells_text.append(f"<b>{day}</b>")
+            all_cells_hover.append(f"<b>Día {day}</b><br>Sin operaciones")
 
-        cal_html += '</div>'
+    # Pad to full weeks
+    while len(all_cells_z) % 7 != 0:
+        all_cells_z.append(None)
+        all_cells_text.append("")
+        all_cells_hover.append("")
 
-    total_cells = first_weekday + days_in_month
-    remaining = (7 - total_cells % 7) % 7
-    for _ in range(remaining):
-        cal_html += '<div class="cal-cell empty"></div>'
+    # Reshape into weeks (rows) x days (cols)
+    n_weeks = len(all_cells_z) // 7
+    z_grid    = [all_cells_z[i*7:(i+1)*7]    for i in range(n_weeks)]
+    text_grid = [all_cells_text[i*7:(i+1)*7] for i in range(n_weeks)]
+    hover_grid= [all_cells_hover[i*7:(i+1)*7]for i in range(n_weeks)]
 
-    cal_html += "</div>"
-    st.markdown(cal_html, unsafe_allow_html=True)
+    # Replace None with NaN for plotly
+    z_grid_plot = [[v if v is not None else float('nan') for v in row] for row in z_grid]
+
+    fig_cal = go.Figure(go.Heatmap(
+        z=z_grid_plot,
+        text=text_grid,
+        hovertext=hover_grid,
+        hovertemplate="%{hovertext}<extra></extra>",
+        texttemplate="%{text}",
+        xgap=4, ygap=4,
+        colorscale=[
+            [0.0,  "#7f1d1d"],
+            [0.35, "#ef4444"],
+            [0.49, "#dc2626"],
+            [0.5,  "#1e2330"],
+            [0.51, "#16a34a"],
+            [0.65, "#22c55e"],
+            [1.0,  "#14532d"],
+        ],
+        zmid=0,
+        showscale=True,
+        colorbar=dict(
+            title="PnL ($)",
+            titlefont=dict(color="#94a3b8"),
+            tickfont=dict(color="#94a3b8"),
+            bgcolor="#111318",
+            bordercolor="#1e2330",
+            thickness=12,
+        )
+    ))
+
+    fig_cal.update_layout(
+        **LAYOUT,
+        height=max(280, n_weeks * 90),
+        xaxis=dict(
+            tickvals=list(range(7)),
+            ticktext=day_names,
+            side="top",
+            gridcolor="transparent",
+            linecolor="transparent",
+        ),
+        yaxis=dict(
+            showticklabels=False,
+            gridcolor="transparent",
+            linecolor="transparent",
+        ),
+        font=dict(color="#f1f5f9", size=12),
+    )
+
+    st.plotly_chart(fig_cal, use_container_width=True)
 
 # ── Tab: Gráficas ─────────────────────────────────────────────────────────────
 with tab_charts:
