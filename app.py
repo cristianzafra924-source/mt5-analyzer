@@ -9,7 +9,7 @@ import numpy as np
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="MT5 Analyzer",
+    page_title="Analizador CRZ MT5",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -18,82 +18,94 @@ st.set_page_config(
 # ── Custom CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@300;400&display=swap');
 
-html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+}
 
-/* Dark theme overrides */
-.stApp { background-color: #0a0c10; }
+.stApp { background-color: #080a0e; }
 
-/* Metric cards */
 div[data-testid="metric-container"] {
-    background: #111318;
-    border: 1px solid #1e2330;
-    border-radius: 12px;
-    padding: 16px;
+    background: #0c0e14;
+    border: 0.5px solid #161b27;
+    border-radius: 6px;
+    padding: 14px 16px;
 }
 div[data-testid="metric-container"] label {
-    color: #64748b !important;
-    font-size: 12px !important;
+    color: #2d3748 !important;
+    font-size: 10px !important;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
+    font-weight: 400;
 }
-div[data-testid="metric-container"] div[data-testid="stMetricValue"] {
-    font-family: 'DM Mono', monospace;
-    font-size: 24px !important;
+div[data-testid="stMetricValue"] {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 20px !important;
+    font-weight: 300 !important;
+    color: #cbd5e1 !important;
+    letter-spacing: -0.02em;
+}
+div[data-testid="stMetricDelta"] {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 11px !important;
+    font-weight: 300 !important;
 }
 
-/* Tabs */
 .stTabs [data-baseweb="tab-list"] {
-    background: #111318;
-    border-radius: 10px;
-    padding: 4px;
-    gap: 4px;
+    background: transparent;
+    border-bottom: 0.5px solid #161b27;
+    gap: 0; padding: 0;
 }
 .stTabs [data-baseweb="tab"] {
-    border-radius: 8px;
-    color: #64748b;
-    font-size: 13px;
+    color: #2d3748;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    border-radius: 0;
 }
 .stTabs [aria-selected="true"] {
-    background: #1e2330 !important;
-    color: #60a5fa !important;
+    background: transparent !important;
+    color: #94a3b8 !important;
+    border-bottom: 1px solid #94a3b8 !important;
 }
 
-/* File uploader */
 [data-testid="stFileUploader"] {
-    background: #111318;
-    border: 1.5px dashed #252b38;
-    border-radius: 16px;
+    background: #0c0e14;
+    border: 0.5px dashed #161b27;
+    border-radius: 6px;
     padding: 20px;
 }
 
-/* Dataframe */
-[data-testid="stDataFrame"] { border-radius: 12px; overflow: hidden; }
+[data-testid="stDataFrame"] { border-radius: 4px; overflow: hidden; }
+[data-testid="stDataFrame"] * { font-size: 12px !important; font-family: 'JetBrains Mono', monospace !important; font-weight: 300 !important; }
 
-/* Divider */
-hr { border-color: #1e2330; }
+hr { border-color: #161b27; border-width: 0.5px; }
 
-/* Header */
 .main-header {
-    font-family: 'Syne', sans-serif;
-    font-size: 32px; font-weight: 800;
-    color: #f1f5f9; letter-spacing: -0.5px;
+    font-family: 'Inter', sans-serif;
+    font-size: 20px; font-weight: 300;
+    color: #94a3b8; letter-spacing: 0.08em;
+    text-transform: uppercase;
     margin-bottom: 4px;
 }
-.main-sub { color: #64748b; font-size: 14px; margin-bottom: 32px; }
+.main-sub { color: #2d3748; font-size: 11px; margin-bottom: 28px; font-weight: 300; letter-spacing: 0.04em; }
 
 .section-label {
-    font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
-    text-transform: uppercase; color: #64748b; margin: 24px 0 12px;
+    font-size: 9px; font-weight: 400; letter-spacing: 0.15em;
+    text-transform: uppercase; color: #2d3748; margin: 20px 0 8px;
 }
 
 .alumno-bar {
-    background: #111318; border: 1px solid #1e2330;
-    border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;
+    background: #0c0e14; border: 0.5px solid #161b27;
+    border-radius: 6px; padding: 12px 16px; margin-bottom: 20px;
 }
-.alumno-name { font-size: 20px; font-weight: 700; color: #f1f5f9; }
-.alumno-meta { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+.alumno-name { font-size: 14px; font-weight: 300; color: #94a3b8; letter-spacing: 0.04em; }
+.alumno-meta { font-size: 10px; color: #2d3748; margin-top: 4px; font-weight: 300; letter-spacing: 0.04em; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -213,7 +225,7 @@ LAYOUT = dict(
 GREEN = "#22c55e"; RED = "#ef4444"; BLUE = "#3b82f6"; MUTED = "#475569"
 
 # ── Main ──────────────────────────────────────────────────────────────────────
-st.markdown('<div class="main-header">📊 MT5 Analyzer</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header">📊 Analizador CRZ MT5</div>', unsafe_allow_html=True)
 st.markdown('<div class="main-sub">Carga el historial .xlsx exportado desde MetaTrader 5</div>', unsafe_allow_html=True)
 
 uploaded = st.file_uploader(
