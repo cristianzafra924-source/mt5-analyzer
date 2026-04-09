@@ -30,9 +30,10 @@ html, body, [class*="css"] {
 
 div[data-testid="metric-container"] {
     background: #0c0e14;
-    border: 0.5px solid #161b27;
-    border-radius: 6px;
+    border: 1px solid #1e2a3a;
+    border-radius: 4px;
     padding: 14px 16px;
+    border-left: 3px solid #1e3a5f;
 }
 div[data-testid="metric-container"] label {
     color: #64748b !important;
@@ -101,8 +102,9 @@ hr { border-color: #161b27; border-width: 0.5px; }
 }
 
 .alumno-bar {
-    background: #0c0e14; border: 0.5px solid #161b27;
-    border-radius: 6px; padding: 12px 16px; margin-bottom: 20px;
+    background: #0c0e14; border: 1px solid #1e2a3a;
+    border-radius: 4px; padding: 12px 16px; margin-bottom: 20px;
+    border-left: 3px solid #2dd4bf;
 }
 .alumno-name { font-size: 14px; font-weight: 300; color: #94a3b8; letter-spacing: 0.04em; }
 .alumno-meta { font-size: 10px; color: #2d3748; margin-top: 4px; font-weight: 300; letter-spacing: 0.04em; }
@@ -461,7 +463,7 @@ with tab_cal:
         for i, day in enumerate(week):
             with cols[i]:
                 if day is None:
-                    st.markdown("<div style='min-height:86px'></div>", unsafe_allow_html=True)
+                    st.markdown("<div style='min-height:86px;'></div>", unsafe_allow_html=True)
                 else:
                     pnl = cal_data.get(day)
                     info = ops_data.get(day, {})
@@ -483,12 +485,13 @@ with tab_cal:
                         </div>""", unsafe_allow_html=True)
                     else:
                         st.markdown(f"""
-                        <div style='background:transparent;
-                             border:0.5px solid #1e2330;
+                        <div style='background:rgba(34,197,94,0.05);
+                             border:1px solid rgba(34,197,94,0.2);
                              border-radius:6px;
                              padding:10px 8px 8px;
                              min-height:86px;'>
-                          <div style='font-size:12px;font-weight:400;color:#475569;'>{day}</div>
+                          <div style='font-size:12px;font-weight:400;color:#4ade80;'>{day}</div>
+                          <div style='font-size:10px;color:rgba(74,222,128,0.4);margin-top:4px;'>—</div>
                         </div>""", unsafe_allow_html=True)
 
 # ── Tab: Gráficas ─────────────────────────────────────────────────────────────
