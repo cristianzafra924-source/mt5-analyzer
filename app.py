@@ -670,7 +670,7 @@ with tab_news:
   <div style='font-size:11px;color:#94a3b8;margin-top:6px;white-space:pre-line;line-height:1.7;font-weight:400;'>{desc}</div>
 </div>""", unsafe_allow_html=True)
     with col_n2:
-        if st.button("🔄 Actualizar", key="refresh_news"):
+        if st.button("🔄 Actualizar noticias", key="refresh_news"):
             st.cache_data.clear()
             st.rerun()
 
@@ -712,12 +712,12 @@ with tab_news:
         with col_f2:
             currencies = sorted(df_news["currency"].unique().tolist())
             currency_filter = st.multiselect(
-                "Divisa", currencies,
+                "Divisa / Activo", currencies,
                 default=[c for c in ["USD","EUR","GBP","JPY","XAU","XAG"] if c in currencies]
             )
         with col_f3:
             days = sorted(df_news["dt"].dt.strftime("%A %d/%m").unique().tolist())
-            day_filter = st.multiselect("Día", days, default=days)
+            day_filter = st.multiselect("Día de la semana", days, default=days)
 
         # Apply filters
         mask = df_news["impact"].isin(impact_filter) if impact_filter else df_news["impact"].notna()
@@ -728,12 +728,17 @@ with tab_news:
 
         df_filtered = df_news[mask]
 
-        st.markdown(f"**{len(df_filtered)} eventos** encontrados")
+        st.markdown(f"**{len(df_filtered)} eventos** esta semana")
         st.markdown("")
 
         # Group by day
+        day_es = {"Monday":"Lunes","Tuesday":"Martes","Wednesday":"Miércoles",
+                   "Thursday":"Jueves","Friday":"Viernes","Saturday":"Sábado","Sunday":"Domingo"}
         for day, group in df_filtered.groupby(df_filtered["dt"].dt.strftime("%A %d/%m")):
-            st.markdown(f"#### 📅 {day.upper()}")
+            day_translated = day
+            for en, es in day_es.items():
+                day_translated = day_translated.replace(en, es)
+            st.markdown(f"#### 📅 {day_translated.upper()}")
 
             for _, row in group.iterrows():
                 imp   = row["impact"]
@@ -741,29 +746,34 @@ with tab_news:
                 emoji = impact_emoji.get(imp, "⚪")
                 actual_str = f"**Actual: {row['actual']}**" if row["actual"] else ""
 
-                st.markdown(f"""
-<div style='background:#161c28;border:1px solid #2a3a52;border-left:3px solid {color};
-     border-radius:4px;padding:10px 14px;margin-bottom:6px;'>
-  <div style='display:flex;justify-content:space-between;align-items:center;'>
-    <div>
-      <span style='font-size:11px;font-weight:700;color:{color};letter-spacing:0.08em;'>{emoji} {imp.upper()} · </span>
-      <span style='font-size:11px;font-weight:600;color:#cbd5e1;'>{row["currency"]} · {row["time"]}</span>
-    </div>
-    <div style='font-size:10px;color:#94a3b8;'>
-      Prev: {row["previous"]} &nbsp;|&nbsp; Prev.: {row["forecast"]}
-      {"&nbsp;|&nbsp;<span style='color:#22c55e;font-weight:700;'>" + row["actual"] + "</span>" if row["actual"] else ""}
-    </div>
-  </div>
-  <div style='font-size:14px;color:#f1f5f9;font-weight:600;margin-top:5px;'>{row["event"]}</div>
-</div>""", unsafe_allow_html=True)
+                actual_html = ("&nbsp;|&nbsp;<b style='color:#22c55e;'>Real: " + str(row["actual"]) + "</b>") if row["actual"] else ""
+                impact_es = {"High": "ALTO", "Medium": "MEDIO", "Low": "BAJO", "Holiday": "FESTIVO"}.get(imp, imp)
+                prev = str(row["previous"]) if row["previous"] else "—"
+                fore = str(row["forecast"]) if row["forecast"] else "—"
+
+                card_html = (
+                    "<div style='background:#161c28;border:1px solid #2a3a52;border-left:3px solid " + color + ";border-radius:4px;padding:12px 16px;margin-bottom:8px;'>"
+                    "<div style='display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;'>"
+                    "<div>"
+                    "<span style='font-size:11px;font-weight:700;color:" + color + ";letter-spacing:0.08em;'>" + emoji + " " + impact_es + " &nbsp;·&nbsp; </span>"
+                    "<span style='font-size:11px;font-weight:600;color:#cbd5e1;'>" + str(row["currency"]) + " &nbsp;·&nbsp; " + str(row["time"]) + "</span>"
+                    "</div>"
+                    "<div style='font-size:10px;color:#94a3b8;'>"
+                    "Anterior: " + prev + " &nbsp;|&nbsp; Previsión: " + fore + actual_html +
+                    "</div>"
+                    "</div>"
+                    "<div style='font-size:14px;color:#f1f5f9;font-weight:600;margin-top:6px;'>" + str(row["event"]) + "</div>"
+                    "</div>"
+                )
+                st.markdown(card_html, unsafe_allow_html=True)
 
             st.markdown("")
 
     else:
         # Fallback: show hardcoded key events if API fails
-        st.info("📡 Conectando con el calendario económico... Si persiste, los datos se mostrarán en la próxima actualización.")
+        st.info("📡 Conectando con el calendario económico... Los datos se cargarán en breve.")
 
-        st.markdown("### Eventos clave a seguir esta semana")
+        st.markdown("### Eventos clave de la semana — Activos principales")
         key_events = [
             ("🔴 ALTO",  "NAS100 · SP500", "Fed Interest Rate Decision — Mayor impacto en índices USA", "Cada 6 semanas · 20:00 CET"),
             ("🔴 ALTO",  "NAS100 · SP500", "Non-Farm Payrolls (NFP) — Mueve fuerte el Nasdaq y SP500", "Primer viernes del mes · 14:30 CET"),
@@ -778,13 +788,14 @@ with tab_news:
         ]
         for imp, currency, event, timing in key_events:
             color = "#ef4444" if "ALTO" in imp else "#f59e0b"
-            st.markdown(f"""
-<div style='background:#161c28;border:1px solid #2a3a52;border-left:3px solid {color};
-     border-radius:4px;padding:10px 14px;margin-bottom:6px;'>
-  <span style='font-size:11px;font-weight:700;color:{color};letter-spacing:0.05em;'>{imp} · {currency}</span>
-  <div style='font-size:14px;color:#f1f5f9;font-weight:600;margin-top:4px;'>{event}</div>
-  <div style='font-size:11px;color:#94a3b8;margin-top:3px;'>{timing}</div>
-</div>""", unsafe_allow_html=True)
+            card_html = (
+                "<div style='background:#161c28;border:1px solid #2a3a52;border-left:3px solid " + color + ";border-radius:4px;padding:12px 16px;margin-bottom:8px;'>"
+                "<span style='font-size:11px;font-weight:700;color:" + color + ";letter-spacing:0.05em;'>" + imp + " &nbsp;·&nbsp; " + currency + "</span>"
+                "<div style='font-size:14px;color:#f1f5f9;font-weight:600;margin-top:5px;'>" + event + "</div>"
+                "<div style='font-size:11px;color:#94a3b8;margin-top:4px;'>" + timing + "</div>"
+                "</div>"
+            )
+            st.markdown(card_html, unsafe_allow_html=True)
 st.divider()
 col_dl1, col_dl2 = st.columns([1,4])
 with col_dl1:
