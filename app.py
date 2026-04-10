@@ -775,8 +775,29 @@ with tab_news:
         if ff_data:
             render_week(ff_data, "esta_semana")
         else:
-            st.warning("📡 No se pudieron cargar los eventos. Mostrando eventos clave de referencia.")
-            render_fallback()
+            st.info("📡 No se pudieron cargar los eventos en tiempo real. Mostrando eventos clave de referencia.")
+            key_events = [
+                ("🔴 ALTO",  "NAS100 · SP500", "Fed Interest Rate Decision — Mayor impacto en índices USA", "Cada 6 semanas · 20:00 CET"),
+                ("🔴 ALTO",  "NAS100 · SP500", "Non-Farm Payrolls (NFP) — Mueve fuerte el Nasdaq y SP500", "Primer viernes del mes · 14:30 CET"),
+                ("🔴 ALTO",  "NAS100 · SP500", "CPI USA (Inflación) — Clave para la Fed y los índices", "Día 10-15 del mes · 14:30 CET"),
+                ("🔴 ALTO",  "XAU · XAG",      "Fed Decision / CPI — Oro y Plata reaccionan fuerte al USD", "Mismo timing que eventos Fed"),
+                ("🔴 ALTO",  "XAU · XAG",      "FOMC Minutes — Impacto directo en metales preciosos", "3 semanas tras reunión Fed · 20:00 CET"),
+                ("🟡 MEDIO", "NAS100 · SP500", "ISM Manufacturing PMI — Indicador de salud económica USA", "Primer día hábil del mes · 16:00 CET"),
+                ("🟡 MEDIO", "NAS100 · SP500", "Initial Jobless Claims — Datos semanales de empleo USA", "Cada jueves · 14:30 CET"),
+                ("🟡 MEDIO", "NAS100 · SP500", "Retail Sales USA — Consumo e impacto en tecnológicas", "Día 15 del mes · 14:30 CET"),
+                ("🟡 MEDIO", "XAU · XAG",      "DXY (Índice Dólar) — Correlación inversa con metales", "Seguimiento continuo"),
+                ("🟡 MEDIO", "NAS100 · SP500", "Resultados trimestrales — AAPL, MSFT, NVDA, GOOGL, AMZN", "Enero, Abril, Julio, Octubre"),
+            ]
+            for imp, currency, event, timing in key_events:
+                color = "#ef4444" if "ALTO" in imp else "#f59e0b"
+                card_html = (
+                    "<div style='background:#161c28;border:1px solid #2a3a52;border-left:3px solid " + color + ";border-radius:4px;padding:12px 16px;margin-bottom:8px;'>"
+                    "<span style='font-size:11px;font-weight:700;color:" + color + ";letter-spacing:0.05em;'>" + imp + " &nbsp;·&nbsp; " + currency + "</span>"
+                    "<div style='font-size:14px;color:#f1f5f9;font-weight:600;margin-top:5px;'>" + event + "</div>"
+                    "<div style='font-size:11px;color:#94a3b8;margin-top:4px;'>" + timing + "</div>"
+                    "</div>"
+                )
+                st.markdown(card_html, unsafe_allow_html=True)
 
     with week2:
         if ff_data_next:
