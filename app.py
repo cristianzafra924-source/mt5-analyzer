@@ -639,19 +639,14 @@ with tab_videos:
         col_i, col_t = st.columns([1,1])
         with col_i:
             img_url = f"{REPO}/{a['imagen'].replace(' ', '%20')}"
-            st.image(img_url, use_container_width=True)
+            st.markdown(f"<img src='{img_url}' style='width:100%;border-radius:4px;'>", unsafe_allow_html=True)
 
         with col_t:
             st.markdown(f"<div style='font-size:13px;color:#94a3b8;line-height:1.7;padding:8px 0;'>{a['texto']}</div>", unsafe_allow_html=True)
             if a.get("audio"):
-                audio_url = f"{REPO}/{requests.utils.quote(a['audio'])}"
-                try:
-                    r = requests.get(audio_url, timeout=8)
-                    if r.status_code == 200:
-                        st.markdown("<div style='font-size:11px;color:#64748b;margin-top:12px;'>🎙️ Nota de voz</div>", unsafe_allow_html=True)
-                        st.audio(r.content, format="audio/ogg")
-                except:
-                    st.caption("Audio no disponible")
+                audio_url = f"{REPO}/{a['audio'].replace(' ', '%20')}"
+                st.markdown("<div style='font-size:11px;color:#64748b;margin-top:12px;margin-bottom:4px;'>🎙️ Nota de voz</div>", unsafe_allow_html=True)
+                st.markdown(f"<audio controls style='width:100%;margin-top:4px;'><source src='{audio_url}'></audio>", unsafe_allow_html=True)
 
         st.divider()
 
