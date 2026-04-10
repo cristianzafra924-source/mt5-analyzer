@@ -275,74 +275,296 @@ st.markdown(f'''
 </div>
 '''.format(LOGO_B64=LOGO_B64), unsafe_allow_html=True)
 
+# ── Noticias (independiente del historial) ───────────────────────────────────
+
+@st.cache_data(ttl=900)
+def fetch_news(week_offset=0):
+    """Fetch economic calendar - tries multiple sources"""
+    from datetime import datetime, timedelta
+    today = datetime.now()
+    monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
+    date_from = monday.strftime("%Y-%m-%d")
+    date_to   = (monday + timedelta(days=6)).strftime("%Y-%m-%d")
+
+    # Try 1: ForexFactory
+    try:
+        suffix = "thisweek" if week_offset == 0 else "nextweek"
+        r = requests.get(
+            f"https://nfs.faireconomy.media/ff_calendar_{suffix}.json",
+            timeout=6,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        )
+        if r.status_code == 200 and r.json():
+            return r.json(), date_from, date_to
+    except:
+        pass
+
+    # Try 2: FMP Economic Calendar (free tier)
+    try:
+        r = requests.get(
+            f"https://financialmodelingprep.com/api/v3/economic_calendar?from={date_from}&to={date_to}&apikey=demo",
+            timeout=6
+        )
+        if r.status_code == 200:
+            raw = r.json()
+            # normalize to FF format
+            events = []
+            for e in raw:
+                events.append({
+                    "date":     e.get("date",""),
+                    "time":     e.get("date","")[-8:-3] if e.get("date","") else "",
+                    "country":  e.get("country",""),
+                    "impact":   {"High":"High","Medium":"Medium","Low":"Low"}.get(e.get("impact",""),"Low"),
+                    "title":    e.get("event",""),
+                    "forecast": e.get("estimate",""),
+                    "previous": e.get("previous",""),
+                    "actual":   e.get("actual",""),
+                })
+            if events:
+                return events, date_from, date_to
+    except:
+        pass
+
+    return None, date_from, date_to
+
+
 uploaded = st.file_uploader(
     "Arrastra aquí el archivo .xlsx del alumno",
     type=["xlsx", "xls"],
     label_visibility="collapsed"
 )
 
-if not uploaded:
-    st.info("⬆️  Sube el historial exportado desde MT5 → Historial → Guardar como informe (.xlsx)")
-    st.stop()
+tab_news, tab_analysis = st.tabs(["📰 Noticias & Calendario", "📊 Análisis de Historial"])
 
-# ── Parse ─────────────────────────────────────────────────────────────────────
-with st.spinner("Procesando historial..."):
-    try:
-        data = parse_mt5(uploaded)
-    except Exception as e:
-        st.error(f"❌ Error al procesar el archivo: {e}")
-        st.stop()
+with tab_news:
+    # Header
+    col_n1, col_n2 = st.columns([3,1])
+    with col_n1:
+        st.markdown("### 📰 Calendario Económico")
+        st.caption("Foco en NAS100 · SP500 · XAU (Oro) · XAG (Plata) · Actualización cada 30 min")
 
-df    = data["df"]
-stats = data["stats"]
-meta  = data["meta"]
+    # Asset quick reference
+    asset_cols = st.columns(4)
+    assets = [
+        ("📈 NAS100", "#3b82f6", "Nasdaq 100 — Tecnología USA\nAfectado: Fed, NFP, CPI, Earnings"),
+        ("📈 SP500",  "#8b5cf6", "S&P 500 — Índice amplio USA\nAfectado: Fed, NFP, CPI, GDP"),
+        ("🥇 XAU",   "#f59e0b", "Oro — Refugio seguro\nAfectado: Fed, CPI, DXY, Geopolítica"),
+        ("🥈 XAG",   "#94a3b8", "Plata — Metal industrial\nAfectado: Fed, CPI, DXY, Industria"),
+    ]
+    for col, (name, color, desc) in zip(asset_cols, assets):
+        col.markdown(f"""
+    <div style='background:#161c28;border:1px solid #2a3a52;border-top:3px solid {color};
+     border-radius:4px;padding:10px 12px;margin-bottom:8px;'>
+      <div style='font-size:14px;font-weight:700;color:{color};letter-spacing:0.03em;'>{name}</div>
+      <div style='font-size:11px;color:#94a3b8;margin-top:6px;white-space:pre-line;line-height:1.7;font-weight:400;'>{desc}</div>
+    </div>""", unsafe_allow_html=True)
+    with col_n2:
+        if st.button("🔄 Actualizar noticias", key="refresh_news"):
+            st.cache_data.clear()
+            st.rerun()
 
-# ── Alumno bar ────────────────────────────────────────────────────────────────
-st.markdown(f"""
+    st.divider()
+
+    # Impact colors
+    impact_color = {"High": "#ef4444", "Medium": "#f59e0b", "Low": "#64748b", "Holiday": "#3b82f6"}
+    impact_emoji = {"High": "🔴", "Medium": "🟡", "Low": "⚪", "Holiday": "🔵"}
+
+    ff_data, date_from, date_to           = fetch_news(0)
+    ff_data_next, date_from_next, date_to_next = fetch_news(1)
+
+    def parse_events(raw):
+        events = []
+        for e in raw:
+            events.append({
+                "date":     e.get("date", ""),
+                "time":     e.get("time", ""),
+                "currency": e.get("country", ""),
+                "impact":   e.get("impact", ""),
+                "event":    e.get("title", ""),
+                "forecast": e.get("forecast", ""),
+                "previous": e.get("previous", ""),
+                "actual":   e.get("actual", ""),
+            })
+        df = pd.DataFrame(events)
+        df["dt"] = pd.to_datetime(df["date"], errors="coerce")
+        df = df.dropna(subset=["dt"]).sort_values("dt")
+        return df
+
+    def render_week(raw_data, label):
+        if not raw_data:
+            st.info(f"📡 No se pudieron cargar los eventos de {label}.")
+            return
+
+        df_news = parse_events(raw_data)
+
+        # Filters
+        col_f1, col_f2, col_f3 = st.columns(3)
+        with col_f1:
+            impact_filter = st.multiselect(
+                "Impacto", ["High","Medium","Low"],
+                default=["High","Medium"], key=f"imp_{label}"
+            )
+        with col_f2:
+            currencies = sorted(df_news["currency"].unique().tolist())
+            currency_filter = st.multiselect(
+                "Divisa", currencies,
+                default=[c for c in ["USD","EUR","GBP","JPY","XAU","XAG"] if c in currencies],
+                key=f"cur_{label}"
+            )
+        with col_f3:
+            days = sorted(df_news["dt"].dt.strftime("%A %d/%m").unique().tolist())
+            day_filter = st.multiselect("Día", days, default=days, key=f"day_{label}")
+
+        mask = df_news["impact"].isin(impact_filter) if impact_filter else df_news["impact"].notna()
+        if currency_filter:
+            mask &= df_news["currency"].isin(currency_filter)
+        if day_filter:
+            mask &= df_news["dt"].dt.strftime("%A %d/%m").isin(day_filter)
+
+        df_filtered = df_news[mask]
+        st.markdown(f"**{len(df_filtered)} eventos** encontrados")
+        st.markdown("")
+
+        impact_es = {"High":"ALTO","Medium":"MEDIO","Low":"BAJO","Holiday":"FESTIVO"}
+        day_es_map = {"Monday":"Lunes","Tuesday":"Martes","Wednesday":"Miércoles",
+                      "Thursday":"Jueves","Friday":"Viernes","Saturday":"Sábado","Sunday":"Domingo"}
+
+        for day, group in df_filtered.groupby(df_filtered["dt"].dt.strftime("%A %d/%m")):
+            day_translated = day
+            for en, es in day_es_map.items():
+                day_translated = day_translated.replace(en, es)
+            st.markdown(f"#### 📅 {day_translated.upper()}")
+
+            for _, row in group.iterrows():
+                imp   = row["impact"]
+                color = impact_color.get(imp, "#64748b")
+                emoji = impact_emoji.get(imp, "⚪")
+                imp_es_str = impact_es.get(imp, imp)
+                prev  = str(row["previous"]) if row["previous"] else "—"
+                fore  = str(row["forecast"]) if row["forecast"] else "—"
+                actual_html = ("&nbsp;|&nbsp;<b style='color:#22c55e;'>Real: " + str(row["actual"]) + "</b>") if row["actual"] else ""
+
+                card_html = (
+                    "<div style='background:#161c28;border:1px solid #2a3a52;border-left:3px solid " + color + ";border-radius:4px;padding:12px 16px;margin-bottom:8px;'>"
+                    "<div style='display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;'>"
+                    "<div>"
+                    "<span style='font-size:11px;font-weight:700;color:" + color + ";letter-spacing:0.08em;'>" + emoji + " " + imp_es_str + " &nbsp;·&nbsp; </span>"
+                    "<span style='font-size:11px;font-weight:600;color:#cbd5e1;'>" + str(row["currency"]) + " &nbsp;·&nbsp; " + str(row["time"]) + "</span>"
+                    "</div>"
+                    "<div style='font-size:10px;color:#94a3b8;'>"
+                    "Anterior: " + prev + " &nbsp;|&nbsp; Previsión: " + fore + actual_html +
+                    "</div></div>"
+                    "<div style='font-size:14px;color:#f1f5f9;font-weight:600;margin-top:6px;'>" + str(row["event"]) + "</div>"
+                    "</div>"
+                )
+                st.markdown(card_html, unsafe_allow_html=True)
+            st.markdown("")
+
+    # Week selector tabs
+    week1, week2 = st.tabs(["📅 Esta semana", "📅 Próxima semana"])
+    with week1:
+        if ff_data:
+            st.caption(f"Semana del {date_from} al {date_to}")
+            render_week(ff_data, "esta_semana")
+        else:
+            st.info("📡 No se pudieron cargar los eventos en tiempo real. Mostrando eventos clave de referencia.")
+            key_events = [
+                ("🔴 ALTO",  "NAS100 · SP500", "Fed Interest Rate Decision — Mayor impacto en índices USA", "Cada 6 semanas · 20:00 CET"),
+                ("🔴 ALTO",  "NAS100 · SP500", "Non-Farm Payrolls (NFP) — Mueve fuerte el Nasdaq y SP500", "Primer viernes del mes · 14:30 CET"),
+                ("🔴 ALTO",  "NAS100 · SP500", "CPI USA (Inflación) — Clave para la Fed y los índices", "Día 10-15 del mes · 14:30 CET"),
+                ("🔴 ALTO",  "XAU · XAG",      "Fed Decision / CPI — Oro y Plata reaccionan fuerte al USD", "Mismo timing que eventos Fed"),
+                ("🔴 ALTO",  "XAU · XAG",      "FOMC Minutes — Impacto directo en metales preciosos", "3 semanas tras reunión Fed · 20:00 CET"),
+                ("🟡 MEDIO", "NAS100 · SP500", "ISM Manufacturing PMI — Indicador de salud económica USA", "Primer día hábil del mes · 16:00 CET"),
+                ("🟡 MEDIO", "NAS100 · SP500", "Initial Jobless Claims — Datos semanales de empleo USA", "Cada jueves · 14:30 CET"),
+                ("🟡 MEDIO", "NAS100 · SP500", "Retail Sales USA — Consumo e impacto en tecnológicas", "Día 15 del mes · 14:30 CET"),
+                ("🟡 MEDIO", "XAU · XAG",      "DXY (Índice Dólar) — Correlación inversa con metales", "Seguimiento continuo"),
+                ("🟡 MEDIO", "NAS100 · SP500", "Resultados trimestrales — AAPL, MSFT, NVDA, GOOGL, AMZN", "Enero, Abril, Julio, Octubre"),
+            ]
+            for imp, currency, event, timing in key_events:
+                color = "#ef4444" if "ALTO" in imp else "#f59e0b"
+                card_html = (
+                    "<div style='background:#161c28;border:1px solid #2a3a52;border-left:3px solid " + color + ";border-radius:4px;padding:12px 16px;margin-bottom:8px;'>"
+                    "<span style='font-size:11px;font-weight:700;color:" + color + ";letter-spacing:0.05em;'>" + imp + " &nbsp;·&nbsp; " + currency + "</span>"
+                    "<div style='font-size:14px;color:#f1f5f9;font-weight:600;margin-top:5px;'>" + event + "</div>"
+                    "<div style='font-size:11px;color:#94a3b8;margin-top:4px;'>" + timing + "</div>"
+                    "</div>"
+                )
+                st.markdown(card_html, unsafe_allow_html=True)
+
+    with week2:
+        if ff_data_next:
+            st.caption(f"Semana del {date_from_next} al {date_to_next}")
+            render_week(ff_data_next, "proxima_semana")
+        else:
+            st.info("📡 Los datos de la próxima semana aún no están disponibles. Prueba el viernes o sábado.")
+
+# ── TABS — always visible ─────────────────────────────────────────────────────
+
+with tab_analysis:
+    if not uploaded:
+        st.markdown("""
+<div style='text-align:center;padding:60px 20px;'>
+  <div style='font-size:48px;margin-bottom:16px;'>📂</div>
+  <div style='font-size:18px;font-weight:300;color:#94a3b8;margin-bottom:8px;'>Sube el historial para ver el análisis</div>
+  <div style='font-size:13px;color:#475569;'>MT5 → Historial → Click derecho → Guardar como informe (.xlsx)</div>
+</div>""", unsafe_allow_html=True)
+    else:
+        with st.spinner("Procesando historial..."):
+            try:
+                data = parse_mt5(uploaded)
+            except Exception as e:
+                st.error(f"❌ Error al procesar el archivo: {e}")
+                st.stop()
+
+        df    = data["df"]
+        stats = data["stats"]
+        meta  = data["meta"]
+
+        # ── Alumno bar ────────────────────────────────────────────────────────
+        st.markdown(f"""
 <div class="alumno-bar">
   <div class="alumno-name">{meta['alumno'] or 'Alumno'}</div>
   <div class="alumno-meta">{meta['cuenta']} · {meta['empresa']} · {meta['fecha']} · {len(df)} operaciones</div>
 </div>
 """, unsafe_allow_html=True)
 
-# ── KPIs ──────────────────────────────────────────────────────────────────────
-st.markdown('<div class="section-label">Capital & Resultado</div>', unsafe_allow_html=True)
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Balance inicial", f"${stats['balance_ini']:,.2f}")
-c2.metric("Balance actual",  f"${stats['balance']:,.2f}")
-ret = stats["pnl_net"] / stats["balance_ini"] * 100 if stats["balance_ini"] else 0
-c3.metric("Beneficio neto",  f"${stats['pnl_net']:+,.2f}", f"{ret:+.2f}%")
-c4.metric("Drawdown máximo", stats["max_dd"])
+        # ── KPIs ──────────────────────────────────────────────────────────────
+        st.markdown('<div class="section-label">Capital & Resultado</div>', unsafe_allow_html=True)
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Balance inicial", f"${stats['balance_ini']:,.2f}")
+        c2.metric("Balance actual",  f"${stats['balance']:,.2f}")
+        ret = stats["pnl_net"] / stats["balance_ini"] * 100 if stats["balance_ini"] else 0
+        c3.metric("Beneficio neto",  f"${stats['pnl_net']:+,.2f}", f"{ret:+.2f}%")
+        c4.metric("Drawdown máximo", stats["max_dd"])
 
-st.markdown('<div class="section-label">Estadísticas de trading</div>', unsafe_allow_html=True)
-wins = df["win"].sum(); losses = (~df["win"]).sum()
-wr = wins / len(df) * 100 if len(df) else 0
-c1, c2, c3, c4, c5, c6 = st.columns(6)
-c1.metric("Total ops",      len(df))
-c2.metric("Win rate",       f"{wr:.1f}%",       f"{int(wins)}G · {int(losses)}P")
-c3.metric("Factor beneficio", f"{stats['pfactor']:.3f}")
-c4.metric("Mejor op.",      f"${stats['best']:+,.2f}")
-c5.metric("Peor op.",       f"${stats['worst']:,.2f}")
-c6.metric("Expectativa",    f"${stats['expected']:+,.2f}" if stats['expected'] else f"${df['pnl_net'].mean():+,.2f}")
+        st.markdown('<div class="section-label">Estadísticas de trading</div>', unsafe_allow_html=True)
+        wins = df["win"].sum(); losses = (~df["win"]).sum()
+        wr = wins / len(df) * 100 if len(df) else 0
+        c1, c2, c3, c4, c5, c6 = st.columns(6)
+        c1.metric("Total ops",        len(df))
+        c2.metric("Win rate",         f"{wr:.1f}%", f"{int(wins)}G · {int(losses)}P")
+        c3.metric("Factor beneficio", f"{stats['pfactor']:.3f}")
+        c4.metric("Mejor op.",        f"${stats['best']:+,.2f}")
+        c5.metric("Peor op.",         f"${stats['worst']:,.2f}")
+        c6.metric("Expectativa",      f"${stats['expected']:+,.2f}" if stats['expected'] else f"${df['pnl_net'].mean():+,.2f}")
 
-st.markdown('<div class="section-label">Long vs Short · Costes</div>', unsafe_allow_html=True)
-longs  = df[df.type=="buy"];  shorts = df[df.type=="sell"]
-lwr = longs["win"].mean()*100 if len(longs) else 0
-swr = shorts["win"].mean()*100 if len(shorts) else 0
-tc = df["comm"].sum(); ts = df["swap"].sum()
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Long (buy)",    len(longs),  f"WR {lwr:.1f}% · ${longs['pnl_net'].sum():+,.2f}")
-c2.metric("Short (sell)",  len(shorts), f"WR {swr:.1f}% · ${shorts['pnl_net'].sum():+,.2f}")
-c3.metric("Comisiones + Swap", f"${tc+ts:,.2f}", f"Comm ${tc:.2f} · Swap ${ts:.2f}")
-c4.metric("Promedio ganadora / perdedora",
-    f"${stats['avg_win']:,.2f}", f"Pérd: ${stats['avg_loss']:,.2f}")
+        st.markdown('<div class="section-label">Long vs Short · Costes</div>', unsafe_allow_html=True)
+        longs  = df[df.type=="buy"];  shorts = df[df.type=="sell"]
+        lwr = longs["win"].mean()*100  if len(longs)  else 0
+        swr = shorts["win"].mean()*100 if len(shorts) else 0
+        tc = df["comm"].sum(); ts = df["swap"].sum()
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Long (buy)",    len(longs),  f"WR {lwr:.1f}% · ${longs['pnl_net'].sum():+,.2f}")
+        c2.metric("Short (sell)",  len(shorts), f"WR {swr:.1f}% · ${shorts['pnl_net'].sum():+,.2f}")
+        c3.metric("Comisiones + Swap", f"${tc+ts:,.2f}", f"Comm ${tc:.2f} · Swap ${ts:.2f}")
+        c4.metric("Promedio ganadora / perdedora", f"${stats['avg_win']:,.2f}", f"Pérd: ${stats['avg_loss']:,.2f}")
 
-st.divider()
+        st.divider()
 
-# ── Tabs ──────────────────────────────────────────────────────────────────────
-tab_ops, tab_sym, tab_mon, tab_cal, tab_charts, tab_news = st.tabs([
-    "📋 Operaciones", "📈 Por símbolo", "📅 Por mes", "🗓️ Calendario", "📊 Gráficas", "📰 Noticias"
-])
+        # ── Sub-tabs análisis ─────────────────────────────────────────────────
+        tab_ops, tab_sym, tab_mon, tab_cal, tab_charts = st.tabs([
+            "📋 Operaciones", "📈 Por símbolo", "📅 Por mes", "🗓️ Calendario", "📊 Gráficas"
+        ])
 
 # ── Tab: Operaciones ──────────────────────────────────────────────────────────
 with tab_ops:
@@ -621,227 +843,14 @@ with tab_charts:
     fig_hr.update_yaxes(ticksuffix="%", range=[0,105])
     st.plotly_chart(fig_hr, use_container_width=True)
 
-# ── Tab: Noticias ─────────────────────────────────────────────────────────────
-with tab_news:
-
-    @st.cache_data(ttl=900)
-    def fetch_news(week_offset=0):
-        """Fetch economic calendar - tries multiple sources"""
-        from datetime import datetime, timedelta
-        today = datetime.now()
-        monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
-        date_from = monday.strftime("%Y-%m-%d")
-        date_to   = (monday + timedelta(days=6)).strftime("%Y-%m-%d")
-
-        # Try 1: ForexFactory
-        try:
-            suffix = "thisweek" if week_offset == 0 else "nextweek"
-            r = requests.get(
-                f"https://nfs.faireconomy.media/ff_calendar_{suffix}.json",
-                timeout=6,
-                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-            )
-            if r.status_code == 200 and r.json():
-                return r.json(), date_from, date_to
-        except:
-            pass
-
-        # Try 2: FMP Economic Calendar (free tier)
-        try:
-            r = requests.get(
-                f"https://financialmodelingprep.com/api/v3/economic_calendar?from={date_from}&to={date_to}&apikey=demo",
-                timeout=6
-            )
-            if r.status_code == 200:
-                raw = r.json()
-                # normalize to FF format
-                events = []
-                for e in raw:
-                    events.append({
-                        "date":     e.get("date",""),
-                        "time":     e.get("date","")[-8:-3] if e.get("date","") else "",
-                        "country":  e.get("country",""),
-                        "impact":   {"High":"High","Medium":"Medium","Low":"Low"}.get(e.get("impact",""),"Low"),
-                        "title":    e.get("event",""),
-                        "forecast": e.get("estimate",""),
-                        "previous": e.get("previous",""),
-                        "actual":   e.get("actual",""),
-                    })
-                if events:
-                    return events, date_from, date_to
-        except:
-            pass
-
-        return None, date_from, date_to
-
-    # Header
-    col_n1, col_n2 = st.columns([3,1])
-    with col_n1:
-        st.markdown("### 📰 Calendario Económico")
-        st.caption("Foco en NAS100 · SP500 · XAU (Oro) · XAG (Plata) · Actualización cada 30 min")
-
-    # Asset quick reference
-    asset_cols = st.columns(4)
-    assets = [
-        ("📈 NAS100", "#3b82f6", "Nasdaq 100 — Tecnología USA\nAfectado: Fed, NFP, CPI, Earnings"),
-        ("📈 SP500",  "#8b5cf6", "S&P 500 — Índice amplio USA\nAfectado: Fed, NFP, CPI, GDP"),
-        ("🥇 XAU",   "#f59e0b", "Oro — Refugio seguro\nAfectado: Fed, CPI, DXY, Geopolítica"),
-        ("🥈 XAG",   "#94a3b8", "Plata — Metal industrial\nAfectado: Fed, CPI, DXY, Industria"),
-    ]
-    for col, (name, color, desc) in zip(asset_cols, assets):
-        col.markdown(f"""
-<div style='background:#161c28;border:1px solid #2a3a52;border-top:3px solid {color};
-     border-radius:4px;padding:10px 12px;margin-bottom:8px;'>
-  <div style='font-size:14px;font-weight:700;color:{color};letter-spacing:0.03em;'>{name}</div>
-  <div style='font-size:11px;color:#94a3b8;margin-top:6px;white-space:pre-line;line-height:1.7;font-weight:400;'>{desc}</div>
-</div>""", unsafe_allow_html=True)
-    with col_n2:
-        if st.button("🔄 Actualizar noticias", key="refresh_news"):
-            st.cache_data.clear()
-            st.rerun()
-
-    st.divider()
-
-    # Impact colors
-    impact_color = {"High": "#ef4444", "Medium": "#f59e0b", "Low": "#64748b", "Holiday": "#3b82f6"}
-    impact_emoji = {"High": "🔴", "Medium": "🟡", "Low": "⚪", "Holiday": "🔵"}
-
-    ff_data, date_from, date_to           = fetch_news(0)
-    ff_data_next, date_from_next, date_to_next = fetch_news(1)
-
-    def parse_events(raw):
-        events = []
-        for e in raw:
-            events.append({
-                "date":     e.get("date", ""),
-                "time":     e.get("time", ""),
-                "currency": e.get("country", ""),
-                "impact":   e.get("impact", ""),
-                "event":    e.get("title", ""),
-                "forecast": e.get("forecast", ""),
-                "previous": e.get("previous", ""),
-                "actual":   e.get("actual", ""),
-            })
-        df = pd.DataFrame(events)
-        df["dt"] = pd.to_datetime(df["date"], errors="coerce")
-        df = df.dropna(subset=["dt"]).sort_values("dt")
-        return df
-
-    def render_week(raw_data, label):
-        if not raw_data:
-            st.info(f"📡 No se pudieron cargar los eventos de {label}.")
-            return
-
-        df_news = parse_events(raw_data)
-
-        # Filters
-        col_f1, col_f2, col_f3 = st.columns(3)
-        with col_f1:
-            impact_filter = st.multiselect(
-                "Impacto", ["High","Medium","Low"],
-                default=["High","Medium"], key=f"imp_{label}"
-            )
-        with col_f2:
-            currencies = sorted(df_news["currency"].unique().tolist())
-            currency_filter = st.multiselect(
-                "Divisa", currencies,
-                default=[c for c in ["USD","EUR","GBP","JPY","XAU","XAG"] if c in currencies],
-                key=f"cur_{label}"
-            )
-        with col_f3:
-            days = sorted(df_news["dt"].dt.strftime("%A %d/%m").unique().tolist())
-            day_filter = st.multiselect("Día", days, default=days, key=f"day_{label}")
-
-        mask = df_news["impact"].isin(impact_filter) if impact_filter else df_news["impact"].notna()
-        if currency_filter:
-            mask &= df_news["currency"].isin(currency_filter)
-        if day_filter:
-            mask &= df_news["dt"].dt.strftime("%A %d/%m").isin(day_filter)
-
-        df_filtered = df_news[mask]
-        st.markdown(f"**{len(df_filtered)} eventos** encontrados")
-        st.markdown("")
-
-        impact_es = {"High":"ALTO","Medium":"MEDIO","Low":"BAJO","Holiday":"FESTIVO"}
-        day_es_map = {"Monday":"Lunes","Tuesday":"Martes","Wednesday":"Miércoles",
-                      "Thursday":"Jueves","Friday":"Viernes","Saturday":"Sábado","Sunday":"Domingo"}
-
-        for day, group in df_filtered.groupby(df_filtered["dt"].dt.strftime("%A %d/%m")):
-            day_translated = day
-            for en, es in day_es_map.items():
-                day_translated = day_translated.replace(en, es)
-            st.markdown(f"#### 📅 {day_translated.upper()}")
-
-            for _, row in group.iterrows():
-                imp   = row["impact"]
-                color = impact_color.get(imp, "#64748b")
-                emoji = impact_emoji.get(imp, "⚪")
-                imp_es_str = impact_es.get(imp, imp)
-                prev  = str(row["previous"]) if row["previous"] else "—"
-                fore  = str(row["forecast"]) if row["forecast"] else "—"
-                actual_html = ("&nbsp;|&nbsp;<b style='color:#22c55e;'>Real: " + str(row["actual"]) + "</b>") if row["actual"] else ""
-
-                card_html = (
-                    "<div style='background:#161c28;border:1px solid #2a3a52;border-left:3px solid " + color + ";border-radius:4px;padding:12px 16px;margin-bottom:8px;'>"
-                    "<div style='display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;'>"
-                    "<div>"
-                    "<span style='font-size:11px;font-weight:700;color:" + color + ";letter-spacing:0.08em;'>" + emoji + " " + imp_es_str + " &nbsp;·&nbsp; </span>"
-                    "<span style='font-size:11px;font-weight:600;color:#cbd5e1;'>" + str(row["currency"]) + " &nbsp;·&nbsp; " + str(row["time"]) + "</span>"
-                    "</div>"
-                    "<div style='font-size:10px;color:#94a3b8;'>"
-                    "Anterior: " + prev + " &nbsp;|&nbsp; Previsión: " + fore + actual_html +
-                    "</div></div>"
-                    "<div style='font-size:14px;color:#f1f5f9;font-weight:600;margin-top:6px;'>" + str(row["event"]) + "</div>"
-                    "</div>"
-                )
-                st.markdown(card_html, unsafe_allow_html=True)
-            st.markdown("")
-
-    # Week selector tabs
-    week1, week2 = st.tabs(["📅 Esta semana", "📅 Próxima semana"])
-    with week1:
-        if ff_data:
-            st.caption(f"Semana del {date_from} al {date_to}")
-            render_week(ff_data, "esta_semana")
-        else:
-            st.info("📡 No se pudieron cargar los eventos en tiempo real. Mostrando eventos clave de referencia.")
-            key_events = [
-                ("🔴 ALTO",  "NAS100 · SP500", "Fed Interest Rate Decision — Mayor impacto en índices USA", "Cada 6 semanas · 20:00 CET"),
-                ("🔴 ALTO",  "NAS100 · SP500", "Non-Farm Payrolls (NFP) — Mueve fuerte el Nasdaq y SP500", "Primer viernes del mes · 14:30 CET"),
-                ("🔴 ALTO",  "NAS100 · SP500", "CPI USA (Inflación) — Clave para la Fed y los índices", "Día 10-15 del mes · 14:30 CET"),
-                ("🔴 ALTO",  "XAU · XAG",      "Fed Decision / CPI — Oro y Plata reaccionan fuerte al USD", "Mismo timing que eventos Fed"),
-                ("🔴 ALTO",  "XAU · XAG",      "FOMC Minutes — Impacto directo en metales preciosos", "3 semanas tras reunión Fed · 20:00 CET"),
-                ("🟡 MEDIO", "NAS100 · SP500", "ISM Manufacturing PMI — Indicador de salud económica USA", "Primer día hábil del mes · 16:00 CET"),
-                ("🟡 MEDIO", "NAS100 · SP500", "Initial Jobless Claims — Datos semanales de empleo USA", "Cada jueves · 14:30 CET"),
-                ("🟡 MEDIO", "NAS100 · SP500", "Retail Sales USA — Consumo e impacto en tecnológicas", "Día 15 del mes · 14:30 CET"),
-                ("🟡 MEDIO", "XAU · XAG",      "DXY (Índice Dólar) — Correlación inversa con metales", "Seguimiento continuo"),
-                ("🟡 MEDIO", "NAS100 · SP500", "Resultados trimestrales — AAPL, MSFT, NVDA, GOOGL, AMZN", "Enero, Abril, Julio, Octubre"),
-            ]
-            for imp, currency, event, timing in key_events:
-                color = "#ef4444" if "ALTO" in imp else "#f59e0b"
-                card_html = (
-                    "<div style='background:#161c28;border:1px solid #2a3a52;border-left:3px solid " + color + ";border-radius:4px;padding:12px 16px;margin-bottom:8px;'>"
-                    "<span style='font-size:11px;font-weight:700;color:" + color + ";letter-spacing:0.05em;'>" + imp + " &nbsp;·&nbsp; " + currency + "</span>"
-                    "<div style='font-size:14px;color:#f1f5f9;font-weight:600;margin-top:5px;'>" + event + "</div>"
-                    "<div style='font-size:11px;color:#94a3b8;margin-top:4px;'>" + timing + "</div>"
-                    "</div>"
-                )
-                st.markdown(card_html, unsafe_allow_html=True)
-
-    with week2:
-        if ff_data_next:
-            st.caption(f"Semana del {date_from_next} al {date_to_next}")
-            render_week(ff_data_next, "proxima_semana")
-        else:
-            st.info("📡 Los datos de la próxima semana aún no están disponibles. Prueba el viernes o sábado.")
-
 # ── Download ──────────────────────────────────────────────────────────────────
-col_dl1, col_dl2 = st.columns([1,4])
-with col_dl1:
-    csv = df[["open","symbol","type","volume","p_in","close","p_out","comm","swap","profit","pnl_net"]].to_csv(index=False)
-    st.download_button(
-        "⬇ Descargar CSV",
-        data=csv,
-        file_name=f"MT5_{meta['alumno'].replace(' ','_')}.csv",
-        mime="text/csv"
-    )
+    st.divider()
+    col_dl1, col_dl2 = st.columns([1,4])
+    with col_dl1:
+        csv = df[["open","symbol","type","volume","p_in","close","p_out","comm","swap","profit","pnl_net"]].to_csv(index=False)
+        st.download_button(
+            "⬇ Descargar CSV",
+            data=csv,
+            file_name=f"MT5_{meta['alumno'].replace(' ','_')}.csv",
+            mime="text/csv"
+        )
