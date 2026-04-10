@@ -639,14 +639,7 @@ with tab_videos:
         col_i, col_t = st.columns([1,1])
         with col_i:
             img_url = f"{REPO}/{a['imagen'].replace(' ', '%20')}"
-            try:
-                r_img = requests.get(img_url, timeout=8)
-                if r_img.status_code == 200:
-                    st.image(r_img.content, use_container_width=True)
-                else:
-                    st.warning("No se pudo cargar la imagen")
-            except:
-                st.warning("Error al cargar la imagen")
+            st.image(img_url, use_container_width=True)
 
         with col_t:
             st.markdown(f"<div style='font-size:13px;color:#94a3b8;line-height:1.7;padding:8px 0;'>{a['texto']}</div>", unsafe_allow_html=True)
