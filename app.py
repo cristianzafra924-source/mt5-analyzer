@@ -1024,13 +1024,13 @@ with tab_analysis:
             st.plotly_chart(fig_hr, use_container_width=True)
 
 # ── Download ──────────────────────────────────────────────────────────────────
-    st.divider()
-    col_dl1, col_dl2 = st.columns([1,4])
-    with col_dl1:
-        csv = df[["open","symbol","type","volume","p_in","close","p_out","comm","swap","profit","pnl_net"]].to_csv(index=False)
-        st.download_button(
-            "⬇ Descargar CSV",
-            data=csv,
-            file_name=f"MT5_{meta['alumno'].replace(' ','_')}.csv",
-            mime="text/csv"
-        )
+        st.divider()
+        col_dl1, col_dl2 = st.columns([1,4])
+        with col_dl1:
+            csv = df[["open","symbol","type","volume","p_in","close","p_out","comm","swap","profit","pnl_net"]].to_csv(index=False)
+            st.download_button(
+                "⬇ Descargar CSV",
+                data=csv,
+                file_name=f"MT5_{meta['alumno'].replace(' ','_')}.csv",
+                mime="text/csv"
+            )
