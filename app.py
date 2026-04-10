@@ -651,8 +651,24 @@ with tab_news:
     # Header
     col_n1, col_n2 = st.columns([3,1])
     with col_n1:
-        st.markdown("### 📰 Calendario Económico & Noticias")
-        st.caption("Eventos de alto impacto · Actualización cada 30 min")
+        st.markdown("### 📰 Calendario Económico")
+        st.caption("Foco en NAS100 · SP500 · XAU (Oro) · XAG (Plata) · Actualización cada 30 min")
+
+    # Asset quick reference
+    asset_cols = st.columns(4)
+    assets = [
+        ("📈 NAS100", "#3b82f6", "Nasdaq 100 — Tecnología USA\nAfectado: Fed, NFP, CPI, Earnings"),
+        ("📈 SP500",  "#8b5cf6", "S&P 500 — Índice amplio USA\nAfectado: Fed, NFP, CPI, GDP"),
+        ("🥇 XAU",   "#f59e0b", "Oro — Refugio seguro\nAfectado: Fed, CPI, DXY, Geopolítica"),
+        ("🥈 XAG",   "#94a3b8", "Plata — Metal industrial\nAfectado: Fed, CPI, DXY, Industria"),
+    ]
+    for col, (name, color, desc) in zip(asset_cols, assets):
+        col.markdown(f"""
+<div style='background:#161c28;border:1px solid #2a3a52;border-top:3px solid {color};
+     border-radius:4px;padding:10px 12px;margin-bottom:8px;'>
+  <div style='font-size:13px;font-weight:600;color:{color};'>{name}</div>
+  <div style='font-size:10px;color:#64748b;margin-top:4px;white-space:pre-line;line-height:1.5;'>{desc}</div>
+</div>""", unsafe_allow_html=True)
     with col_n2:
         if st.button("🔄 Actualizar", key="refresh_news"):
             st.cache_data.clear()
@@ -697,7 +713,7 @@ with tab_news:
             currencies = sorted(df_news["currency"].unique().tolist())
             currency_filter = st.multiselect(
                 "Divisa", currencies,
-                default=[c for c in ["USD","EUR","GBP","JPY","XAU"] if c in currencies]
+                default=[c for c in ["USD","EUR","GBP","JPY","XAU","XAG"] if c in currencies]
             )
         with col_f3:
             days = sorted(df_news["dt"].dt.strftime("%A %d/%m").unique().tolist())
@@ -726,7 +742,7 @@ with tab_news:
                 actual_str = f"**Actual: {row['actual']}**" if row["actual"] else ""
 
                 st.markdown(f"""
-<div style='background:#0f1117;border:1px solid #1e2a3a;border-left:3px solid {color};
+<div style='background:#161c28;border:1px solid #2a3a52;border-left:3px solid {color};
      border-radius:4px;padding:10px 14px;margin-bottom:6px;'>
   <div style='display:flex;justify-content:space-between;align-items:center;'>
     <div>
@@ -749,21 +765,21 @@ with tab_news:
 
         st.markdown("### Eventos clave a seguir esta semana")
         key_events = [
-            ("🔴 ALTO", "USD", "Non-Farm Payrolls (NFP)", "Primer viernes del mes · 14:30 CET"),
-            ("🔴 ALTO", "USD", "Fed Interest Rate Decision", "Cada 6 semanas · 20:00 CET"),
-            ("🔴 ALTO", "USD", "CPI (Inflación USA)", "Día 10-15 de cada mes · 14:30 CET"),
-            ("🔴 ALTO", "EUR", "BCE Decisión de tipos", "Cada 6 semanas · 14:15 CET"),
-            ("🟡 MEDIO","USD", "Initial Jobless Claims", "Cada jueves · 14:30 CET"),
-            ("🟡 MEDIO","USD", "ISM Manufacturing PMI", "Primer día hábil del mes · 16:00 CET"),
-            ("🟡 MEDIO","GBP", "BOE Interest Rate Decision", "Cada 6 semanas · 13:00 CET"),
-            ("🟡 MEDIO","USD", "Retail Sales", "Día 15 de cada mes · 14:30 CET"),
-            ("🔴 ALTO", "XAU", "Oro — Alta correlación con USD/CPI", "Seguir en contexto inflación"),
-            ("🔴 ALTO", "NAS100","FOMC Minutes", "3 semanas tras reunión Fed · 20:00 CET"),
+            ("🔴 ALTO",  "NAS100 · SP500", "Fed Interest Rate Decision — Mayor impacto en índices USA", "Cada 6 semanas · 20:00 CET"),
+            ("🔴 ALTO",  "NAS100 · SP500", "Non-Farm Payrolls (NFP) — Mueve fuerte el Nasdaq y SP500", "Primer viernes del mes · 14:30 CET"),
+            ("🔴 ALTO",  "NAS100 · SP500", "CPI USA (Inflación) — Clave para la Fed y los índices", "Día 10-15 del mes · 14:30 CET"),
+            ("🔴 ALTO",  "XAU · XAG",      "Fed Decision / CPI — Oro y Plata reaccionan fuerte al USD", "Mismo timing que eventos Fed"),
+            ("🔴 ALTO",  "XAU · XAG",      "FOMC Minutes — Impacto directo en metales preciosos", "3 semanas tras reunión Fed · 20:00 CET"),
+            ("🟡 MEDIO", "NAS100 · SP500", "ISM Manufacturing PMI — Indicador de salud económica USA", "Primer día hábil del mes · 16:00 CET"),
+            ("🟡 MEDIO", "NAS100 · SP500", "Initial Jobless Claims — Datos semanales de empleo USA", "Cada jueves · 14:30 CET"),
+            ("🟡 MEDIO", "NAS100 · SP500", "Retail Sales USA — Consumo e impacto en tecnológicas", "Día 15 del mes · 14:30 CET"),
+            ("🟡 MEDIO", "XAU · XAG",      "DXY (Índice Dólar) — Correlación inversa con metales", "Seguimiento continuo"),
+            ("🟡 MEDIO", "NAS100 · SP500", "Resultados trimestrales — AAPL, MSFT, NVDA, GOOGL, AMZN", "Enero, Abril, Julio, Octubre"),
         ]
         for imp, currency, event, timing in key_events:
             color = "#ef4444" if "ALTO" in imp else "#f59e0b"
             st.markdown(f"""
-<div style='background:#0f1117;border:1px solid #1e2a3a;border-left:3px solid {color};
+<div style='background:#161c28;border:1px solid #2a3a52;border-left:3px solid {color};
      border-radius:4px;padding:10px 14px;margin-bottom:6px;'>
   <span style='font-size:11px;font-weight:600;color:{color};'>{imp} · {currency}</span>
   <div style='font-size:13px;color:#e2e8f0;font-weight:500;margin-top:3px;'>{event}</div>
