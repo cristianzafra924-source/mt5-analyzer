@@ -656,12 +656,8 @@ with tab_videos:
                 unsafe_allow_html=True
             )
             st.markdown("<div style='font-size:11px;color:#64748b;margin-top:16px;margin-bottom:4px;'>🎙️ Nota de voz</div>", unsafe_allow_html=True)
-            st.markdown(
-                "<audio controls style='width:100%;margin-top:4px;'>"
-                "<source src='data:" + a["audio_fmt"] + ";base64," + a["audio_b64"] + "'>"
-                "</audio>",
-                unsafe_allow_html=True
-            )
+            import base64 as _b64
+            st.audio(_b64.b64decode(a["audio_b64"]), format="audio/ogg")
 
         st.divider()
 
