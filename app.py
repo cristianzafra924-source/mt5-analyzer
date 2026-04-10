@@ -611,12 +611,17 @@ with tab_videos:
 
         st.divider()
 
-    # ── Galería de imágenes ───────────────────────────────────────────────────
+    # ── Galería de imágenes con análisis ─────────────────────────────────────
     st.markdown("### 📊 Escenarios & Análisis Gráfico")
-    st.caption("Capturas de mercado — niveles, setups y zonas de interés")
+    st.caption("Sube capturas con tu análisis escrito o nota de voz")
     st.markdown("")
 
-    # Upload images
+    # Session state for image notes
+    if "img_notes" not in st.session_state:
+        st.session_state.img_notes = {}
+    if "img_audios" not in st.session_state:
+        st.session_state.img_audios = {}
+
     imgs = st.file_uploader(
         "Sube capturas del mercado (NAS100, SP500, XAU, XAG)",
         type=["png","jpg","jpeg","webp"],
@@ -625,18 +630,50 @@ with tab_videos:
     )
 
     if imgs:
-        cols_img = st.columns(3)
         for i, img in enumerate(imgs):
-            with cols_img[i % 3]:
+            img_key = f"img_{img.name}"
+            st.markdown(f"""
+<div style='background:#161c28;border:1px solid #2a3a52;border-radius:4px;padding:14px 16px;margin-bottom:16px;'>
+  <div style='font-size:12px;font-weight:600;color:#2dd4bf;letter-spacing:0.06em;margin-bottom:10px;'>
+    📈 {img.name.replace("_"," ").replace("-"," ").rsplit(".",1)[0].upper()}
+  </div>
+</div>""", unsafe_allow_html=True)
+
+            col_i, col_t = st.columns([1, 1])
+            with col_i:
                 st.image(img, use_container_width=True)
-                name = img.name.replace("_"," ").replace("-"," ").rsplit(".",1)[0]
-                st.markdown(f"<div style='font-size:11px;color:#64748b;text-align:center;margin-top:4px;'>{name}</div>", unsafe_allow_html=True)
+
+            with col_t:
+                # Text analysis
+                note = st.text_area(
+                    "✍️ Análisis escrito",
+                    value=st.session_state.img_notes.get(img_key, ""),
+                    placeholder="Describe el setup, niveles clave, sesgo, confluencias...",
+                    height=160,
+                    key=f"note_{img_key}"
+                )
+                if note:
+                    st.session_state.img_notes[img_key] = note
+
+                # Audio note
+                st.markdown("<div style='font-size:11px;color:#64748b;margin-top:8px;margin-bottom:4px;'>🎙️ Nota de voz</div>", unsafe_allow_html=True)
+                audio = st.file_uploader(
+                    "Adjunta audio",
+                    type=["mp3","wav","m4a","ogg"],
+                    key=f"audio_{img_key}",
+                    label_visibility="collapsed"
+                )
+                if audio:
+                    st.audio(audio)
+                    st.session_state.img_audios[img_key] = True
+
+            st.divider()
     else:
         st.markdown("""
 <div style='background:#0f1117;border:1px dashed #2a3a52;border-radius:4px;padding:32px;text-align:center;'>
   <div style='font-size:32px;margin-bottom:8px;'>📈</div>
   <div style='font-size:13px;color:#475569;'>Sube capturas de los gráficos con los setups de la semana</div>
-  <div style='font-size:11px;color:#334155;margin-top:4px;'>NAS100 · SP500 · XAU · XAG</div>
+  <div style='font-size:11px;color:#334155;margin-top:4px;'>Cada imagen puede tener análisis escrito + nota de voz</div>
 </div>""", unsafe_allow_html=True)
 
     st.markdown("")
