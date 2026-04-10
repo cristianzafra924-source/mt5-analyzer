@@ -666,8 +666,8 @@ with tab_news:
         col.markdown(f"""
 <div style='background:#161c28;border:1px solid #2a3a52;border-top:3px solid {color};
      border-radius:4px;padding:10px 12px;margin-bottom:8px;'>
-  <div style='font-size:13px;font-weight:600;color:{color};'>{name}</div>
-  <div style='font-size:10px;color:#64748b;margin-top:4px;white-space:pre-line;line-height:1.5;'>{desc}</div>
+  <div style='font-size:14px;font-weight:700;color:{color};letter-spacing:0.03em;'>{name}</div>
+  <div style='font-size:11px;color:#94a3b8;margin-top:6px;white-space:pre-line;line-height:1.7;font-weight:400;'>{desc}</div>
 </div>""", unsafe_allow_html=True)
     with col_n2:
         if st.button("🔄 Actualizar", key="refresh_news"):
@@ -746,15 +746,15 @@ with tab_news:
      border-radius:4px;padding:10px 14px;margin-bottom:6px;'>
   <div style='display:flex;justify-content:space-between;align-items:center;'>
     <div>
-      <span style='font-size:11px;font-weight:600;color:{color};letter-spacing:0.08em;'>{emoji} {imp.upper()} · </span>
-      <span style='font-size:11px;font-weight:700;color:#94a3b8;'>{row["currency"]} · {row["time"]}</span>
+      <span style='font-size:11px;font-weight:700;color:{color};letter-spacing:0.08em;'>{emoji} {imp.upper()} · </span>
+      <span style='font-size:11px;font-weight:600;color:#cbd5e1;'>{row["currency"]} · {row["time"]}</span>
     </div>
-    <div style='font-size:10px;color:#475569;'>
-      Prev: {row["previous"]} &nbsp;|&nbsp; Prev: {row["forecast"]}
-      {"&nbsp;|&nbsp;<span style='color:#22c55e;font-weight:600;'>" + row["actual"] + "</span>" if row["actual"] else ""}
+    <div style='font-size:10px;color:#94a3b8;'>
+      Prev: {row["previous"]} &nbsp;|&nbsp; Prev.: {row["forecast"]}
+      {"&nbsp;|&nbsp;<span style='color:#22c55e;font-weight:700;'>" + row["actual"] + "</span>" if row["actual"] else ""}
     </div>
   </div>
-  <div style='font-size:13px;color:#e2e8f0;font-weight:500;margin-top:4px;'>{row["event"]}</div>
+  <div style='font-size:14px;color:#f1f5f9;font-weight:600;margin-top:5px;'>{row["event"]}</div>
 </div>""", unsafe_allow_html=True)
 
             st.markdown("")
@@ -781,9 +781,9 @@ with tab_news:
             st.markdown(f"""
 <div style='background:#161c28;border:1px solid #2a3a52;border-left:3px solid {color};
      border-radius:4px;padding:10px 14px;margin-bottom:6px;'>
-  <span style='font-size:11px;font-weight:600;color:{color};'>{imp} · {currency}</span>
-  <div style='font-size:13px;color:#e2e8f0;font-weight:500;margin-top:3px;'>{event}</div>
-  <div style='font-size:11px;color:#475569;margin-top:2px;'>{timing}</div>
+  <span style='font-size:11px;font-weight:700;color:{color};letter-spacing:0.05em;'>{imp} · {currency}</span>
+  <div style='font-size:14px;color:#f1f5f9;font-weight:600;margin-top:4px;'>{event}</div>
+  <div style='font-size:11px;color:#94a3b8;margin-top:3px;'>{timing}</div>
 </div>""", unsafe_allow_html=True)
 st.divider()
 col_dl1, col_dl2 = st.columns([1,4])
