@@ -566,282 +566,282 @@ with tab_analysis:
             "📋 Operaciones", "📈 Por símbolo", "📅 Por mes", "🗓️ Calendario", "📊 Gráficas"
         ])
 
-# ── Tab: Operaciones ──────────────────────────────────────────────────────────
-with tab_ops:
-    display = df[["open","symbol","type","volume","p_in","close","p_out","comm","swap","profit","pnl_net"]].copy()
-    display.columns = ["Apertura","Símbolo","Tipo","Vol","Entrada","Cierre","Salida","Comisión","Swap","Beneficio","PnL neto"]
+        # ── Tab: Operaciones ──────────────────────────────────────────────────────────
+        with tab_ops:
+            display = df[["open","symbol","type","volume","p_in","close","p_out","comm","swap","profit","pnl_net"]].copy()
+            display.columns = ["Apertura","Símbolo","Tipo","Vol","Entrada","Cierre","Salida","Comisión","Swap","Beneficio","PnL neto"]
 
-    def color_profit(val):
-        if isinstance(val, (int, float)):
-            return f"color: {'#22c55e' if val > 0 else '#ef4444' if val < 0 else '#94a3b8'}"
-        return ""
+            def color_profit(val):
+                if isinstance(val, (int, float)):
+                    return f"color: {'#22c55e' if val > 0 else '#ef4444' if val < 0 else '#94a3b8'}"
+                return ""
 
-    st.dataframe(
-        display.style
-            .map(color_profit, subset=["Beneficio", "PnL neto"])
-            .format({
-                "Entrada": "{:.2f}", "Salida": "{:.2f}",
-                "Comisión": "{:.2f}", "Swap": "{:.2f}",
-                "Beneficio": "{:+.2f}", "PnL neto": "{:+.2f}"
-            }),
-        use_container_width=True, height=400
-    )
+            st.dataframe(
+                display.style
+                    .map(color_profit, subset=["Beneficio", "PnL neto"])
+                    .format({
+                        "Entrada": "{:.2f}", "Salida": "{:.2f}",
+                        "Comisión": "{:.2f}", "Swap": "{:.2f}",
+                        "Beneficio": "{:+.2f}", "PnL neto": "{:+.2f}"
+                    }),
+                use_container_width=True, height=400
+            )
 
-# ── Tab: Por símbolo ──────────────────────────────────────────────────────────
-with tab_sym:
-    sym_g = df.groupby("symbol").agg(
-        Operaciones=("profit", "count"),
-        Ganadoras=("win", "sum"),
-        PnL_neto=("pnl_net", "sum"),
-        Gan_bruta=("profit", lambda x: x[x>0].sum()),
-        Perd_bruta=("profit", lambda x: x[x<0].sum()),
-        Mejor=("profit", "max"),
-        Peor=("profit", "min"),
-    ).reset_index()
-    sym_g["Perdedoras"] = sym_g["Operaciones"] - sym_g["Ganadoras"]
-    sym_g["Win_rate"] = sym_g["Ganadoras"] / sym_g["Operaciones"] * 100
-    sym_g["Factor"] = sym_g["Gan_bruta"] / sym_g["Perd_bruta"].abs().replace(0, np.nan)
-    sym_g = sym_g.sort_values("PnL_neto", ascending=False)
-    sym_g.columns = ["Símbolo","Ops","Ganadoras","PnL Neto","Gan. Bruta","Pérd. Bruta","Mejor","Peor","Perdedoras","Win Rate %","Factor Ben."]
+        # ── Tab: Por símbolo ──────────────────────────────────────────────────────────
+        with tab_sym:
+            sym_g = df.groupby("symbol").agg(
+                Operaciones=("profit", "count"),
+                Ganadoras=("win", "sum"),
+                PnL_neto=("pnl_net", "sum"),
+                Gan_bruta=("profit", lambda x: x[x>0].sum()),
+                Perd_bruta=("profit", lambda x: x[x<0].sum()),
+                Mejor=("profit", "max"),
+                Peor=("profit", "min"),
+            ).reset_index()
+            sym_g["Perdedoras"] = sym_g["Operaciones"] - sym_g["Ganadoras"]
+            sym_g["Win_rate"] = sym_g["Ganadoras"] / sym_g["Operaciones"] * 100
+            sym_g["Factor"] = sym_g["Gan_bruta"] / sym_g["Perd_bruta"].abs().replace(0, np.nan)
+            sym_g = sym_g.sort_values("PnL_neto", ascending=False)
+            sym_g.columns = ["Símbolo","Ops","Ganadoras","PnL Neto","Gan. Bruta","Pérd. Bruta","Mejor","Peor","Perdedoras","Win Rate %","Factor Ben."]
 
-    st.dataframe(
-        sym_g[["Símbolo","Ops","Ganadoras","Perdedoras","Win Rate %","PnL Neto","Gan. Bruta","Pérd. Bruta","Factor Ben.","Mejor","Peor"]]
-        .style.map(color_profit, subset=["PnL Neto","Gan. Bruta","Pérd. Bruta","Mejor","Peor"])
-        .format({"Win Rate %":"{:.1f}%","PnL Neto":"{:+.2f}","Gan. Bruta":"{:+.2f}",
-                 "Pérd. Bruta":"{:.2f}","Factor Ben.":"{:.2f}","Mejor":"{:+.2f}","Peor":"{:.2f}"}),
-        use_container_width=True
-    )
+            st.dataframe(
+                sym_g[["Símbolo","Ops","Ganadoras","Perdedoras","Win Rate %","PnL Neto","Gan. Bruta","Pérd. Bruta","Factor Ben.","Mejor","Peor"]]
+                .style.map(color_profit, subset=["PnL Neto","Gan. Bruta","Pérd. Bruta","Mejor","Peor"])
+                .format({"Win Rate %":"{:.1f}%","PnL Neto":"{:+.2f}","Gan. Bruta":"{:+.2f}",
+                         "Pérd. Bruta":"{:.2f}","Factor Ben.":"{:.2f}","Mejor":"{:+.2f}","Peor":"{:.2f}"}),
+                use_container_width=True
+            )
 
-# ── Tab: Por mes ──────────────────────────────────────────────────────────────
-with tab_mon:
-    mon_g = df.groupby("month").agg(
-        Operaciones=("profit","count"),
-        Ganadoras=("win","sum"),
-        PnL_neto=("pnl_net","sum"),
-        Mejor=("profit","max"),
-        Peor=("profit","min"),
-    ).reset_index()
-    mon_g["Perdedoras"] = mon_g["Operaciones"] - mon_g["Ganadoras"]
-    mon_g["Win Rate %"] = mon_g["Ganadoras"] / mon_g["Operaciones"] * 100
-    mon_g.columns = ["Mes","Ops","Ganadoras","PnL Neto","Mejor","Peor","Perdedoras","Win Rate %"]
+        # ── Tab: Por mes ──────────────────────────────────────────────────────────────
+        with tab_mon:
+            mon_g = df.groupby("month").agg(
+                Operaciones=("profit","count"),
+                Ganadoras=("win","sum"),
+                PnL_neto=("pnl_net","sum"),
+                Mejor=("profit","max"),
+                Peor=("profit","min"),
+            ).reset_index()
+            mon_g["Perdedoras"] = mon_g["Operaciones"] - mon_g["Ganadoras"]
+            mon_g["Win Rate %"] = mon_g["Ganadoras"] / mon_g["Operaciones"] * 100
+            mon_g.columns = ["Mes","Ops","Ganadoras","PnL Neto","Mejor","Peor","Perdedoras","Win Rate %"]
 
-    st.dataframe(
-        mon_g[["Mes","Ops","Ganadoras","Perdedoras","Win Rate %","PnL Neto","Mejor","Peor"]]
-        .style.map(color_profit, subset=["PnL Neto","Mejor","Peor"])
-        .format({"Win Rate %":"{:.1f}%","PnL Neto":"{:+.2f}","Mejor":"{:+.2f}","Peor":"{:.2f}"}),
-        use_container_width=True
-    )
+            st.dataframe(
+                mon_g[["Mes","Ops","Ganadoras","Perdedoras","Win Rate %","PnL Neto","Mejor","Peor"]]
+                .style.map(color_profit, subset=["PnL Neto","Mejor","Peor"])
+                .format({"Win Rate %":"{:.1f}%","PnL Neto":"{:+.2f}","Mejor":"{:+.2f}","Peor":"{:.2f}"}),
+                use_container_width=True
+            )
 
-# ── Tab: Calendario ───────────────────────────────────────────────────────────
-with tab_cal:
-    # Month selector
-    months_avail = sorted(df["month"].unique())
-    sel_month = st.selectbox("Mes", months_avail,
-                              index=len(months_avail)-1,
-                              format_func=lambda m: datetime.strptime(m, "%Y-%m").strftime("%B %Y")
-                              if "-" in m else m)
+        # ── Tab: Calendario ───────────────────────────────────────────────────────────
+        with tab_cal:
+            # Month selector
+            months_avail = sorted(df["month"].unique())
+            sel_month = st.selectbox("Mes", months_avail,
+                                      index=len(months_avail)-1,
+                                      format_func=lambda m: datetime.strptime(m, "%Y-%m").strftime("%B %Y")
+                                      if "-" in m else m)
 
-    # Filter by month
-    mask = df["month"] == sel_month
-    dm = df[mask]
+            # Filter by month
+            mask = df["month"] == sel_month
+            dm = df[mask]
 
-    # Monthly summary
-    m_pnl = dm["pnl_net"].sum()
-    m_ops = len(dm)
-    daily = dm.groupby("close_date")["pnl_net"].sum()
-    win_days  = (daily > 0).sum()
-    loss_days = (daily < 0).sum()
+            # Monthly summary
+            m_pnl = dm["pnl_net"].sum()
+            m_ops = len(dm)
+            daily = dm.groupby("close_date")["pnl_net"].sum()
+            win_days  = (daily > 0).sum()
+            loss_days = (daily < 0).sum()
 
-    c1,c2,c3,c4,c5 = st.columns(5)
-    color = GREEN if m_pnl >= 0 else RED
-    c1.metric("PnL del mes", f"${m_pnl:+,.2f}")
-    c2.metric("Operaciones", m_ops)
-    c3.metric("Días operados", len(daily))
-    c4.metric("Días ganadores", int(win_days))
-    c5.metric("Días perdedores", int(loss_days))
+            c1,c2,c3,c4,c5 = st.columns(5)
+            color = GREEN if m_pnl >= 0 else RED
+            c1.metric("PnL del mes", f"${m_pnl:+,.2f}")
+            c2.metric("Operaciones", m_ops)
+            c3.metric("Días operados", len(daily))
+            c4.metric("Días ganadores", int(win_days))
+            c5.metric("Días perdedores", int(loss_days))
 
-    st.markdown("---")
+            st.markdown("---")
 
-    # Build calendar using Streamlit columns
-    try:
-        if "-" in sel_month:
-            yr, mo = map(int, sel_month.split("-"))
-        else:
-            yr, mo = map(int, sel_month.split("."))
-    except:
-        yr, mo = date.today().year, date.today().month
-
-    cal_data = {}
-    for d_date, pnl in daily.items():
-        day_num = d_date.day if hasattr(d_date, 'day') else int(str(d_date)[-2:])
-        cal_data[day_num] = pnl
-
-    ops_by_day = dm.groupby("close_date").agg(ops=("profit","count"), wins=("win","sum"))
-    ops_data = {}
-    for d_date, row in ops_by_day.iterrows():
-        day_num = d_date.day if hasattr(d_date, 'day') else int(str(d_date)[-2:])
-        ops_data[day_num] = {"ops": int(row["ops"]), "wins": int(row["wins"])}
-
-    days_in_month = calendar.monthrange(yr, mo)[1]
-    first_weekday = calendar.monthrange(yr, mo)[0]
-
-    # Header row
-    day_names = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"]
-    cols = st.columns(7)
-    for i, d in enumerate(day_names):
-        cols[i].markdown(f"<div style='text-align:center;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;padding:4px 0'>{d}</div>", unsafe_allow_html=True)
-
-    # Build all cells
-    all_cells = [None] * first_weekday
-    for day in range(1, days_in_month + 1):
-        all_cells.append(day)
-    while len(all_cells) % 7 != 0:
-        all_cells.append(None)
-
-    # Render week by week
-    for week_start in range(0, len(all_cells), 7):
-        week = all_cells[week_start:week_start+7]
-        cols = st.columns(7)
-        for i, day in enumerate(week):
-            with cols[i]:
-                if day is None:
-                    st.markdown("<div style='min-height:86px;'></div>", unsafe_allow_html=True)
+            # Build calendar using Streamlit columns
+            try:
+                if "-" in sel_month:
+                    yr, mo = map(int, sel_month.split("-"))
                 else:
-                    pnl = cal_data.get(day)
-                    info = ops_data.get(day, {})
-                    if pnl is not None:
-                        color = "#22c55e" if pnl > 0 else "#ef4444"
-                        bg = "rgba(34,197,94,0.08)" if pnl > 0 else "rgba(239,68,68,0.08)"
-                        sign = "+" if pnl >= 0 else ""
-                        ops_count = info.get("ops", 0)
-                        st.markdown(f"""
-                        <div style='background:{bg};
-                             border:1.5px solid {color};
-                             border-radius:6px;
-                             padding:10px 8px 8px;
-                             min-height:86px;
-                             box-shadow:0 0 0 0.5px rgba(0,0,0,0.3);'>
-                          <div style='font-size:12px;font-weight:500;color:#94a3b8;margin-bottom:6px;'>{day}</div>
-                          <div style='font-size:14px;font-weight:600;color:{color};line-height:1.2;'>{sign}{pnl:,.2f}$</div>
-                          <div style='font-size:10px;color:#64748b;margin-top:4px;'>{ops_count} op{"s" if ops_count>1 else ""}</div>
-                        </div>""", unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"""
-                        <div style='background:rgba(34,197,94,0.05);
-                             border:1px solid rgba(34,197,94,0.2);
-                             border-radius:6px;
-                             padding:10px 8px 8px;
-                             min-height:86px;'>
-                          <div style='font-size:12px;font-weight:400;color:#4ade80;'>{day}</div>
-                          <div style='font-size:10px;color:rgba(74,222,128,0.4);margin-top:4px;'>—</div>
-                        </div>""", unsafe_allow_html=True)
+                    yr, mo = map(int, sel_month.split("."))
+            except:
+                yr, mo = date.today().year, date.today().month
 
-# ── Tab: Gráficas ─────────────────────────────────────────────────────────────
-with tab_charts:
-    col1, col2 = st.columns(2)
+            cal_data = {}
+            for d_date, pnl in daily.items():
+                day_num = d_date.day if hasattr(d_date, 'day') else int(str(d_date)[-2:])
+                cal_data[day_num] = pnl
 
-    # ── Equity curve ─────────────────────────────────────────────────────────
-    with col1:
-        st.markdown("**Curva de equity acumulada**")
-        sorted_df = df.sort_values("close_dt").copy()
-        sorted_df["equity"] = stats["balance_ini"] + sorted_df["pnl_net"].cumsum()
-        eq_color = GREEN if stats["pnl_net"] >= 0 else RED
+            ops_by_day = dm.groupby("close_date").agg(ops=("profit","count"), wins=("win","sum"))
+            ops_data = {}
+            for d_date, row in ops_by_day.iterrows():
+                day_num = d_date.day if hasattr(d_date, 'day') else int(str(d_date)[-2:])
+                ops_data[day_num] = {"ops": int(row["ops"]), "wins": int(row["wins"])}
 
-        fig_eq = go.Figure()
-        fig_eq.add_trace(go.Scatter(
-            x=list(range(len(sorted_df)+1)),
-            y=[stats["balance_ini"]] + sorted_df["equity"].tolist(),
-            mode="lines",
-            line=dict(color=eq_color, width=2),
-            fill="tozeroy",
-            fillcolor=f"rgba({'34,197,94' if stats['pnl_net']>=0 else '239,68,68'},0.08)",
-            hovertemplate="Op #%{x}<br>Balance: $%{y:,.2f}<extra></extra>"
-        ))
-        fig_eq.update_layout(**LAYOUT, height=260)
-        fig_eq.update_xaxes(title_text="Operación #")
-        fig_eq.update_yaxes(tickprefix="$")
-        st.plotly_chart(fig_eq, use_container_width=True)
+            days_in_month = calendar.monthrange(yr, mo)[1]
+            first_weekday = calendar.monthrange(yr, mo)[0]
 
-    # ── Daily PnL ─────────────────────────────────────────────────────────────
-    with col2:
-        st.markdown("**PnL diario**")
-        daily_pnl = df.groupby("close_date")["pnl_net"].sum().reset_index()
-        daily_pnl.columns = ["date", "pnl"]
-        daily_pnl["color"] = daily_pnl["pnl"].apply(lambda v: GREEN if v >= 0 else RED)
+            # Header row
+            day_names = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"]
+            cols = st.columns(7)
+            for i, d in enumerate(day_names):
+                cols[i].markdown(f"<div style='text-align:center;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;padding:4px 0'>{d}</div>", unsafe_allow_html=True)
 
-        fig_d = go.Figure()
-        fig_d.add_trace(go.Bar(
-            x=daily_pnl["date"].astype(str),
-            y=daily_pnl["pnl"],
-            marker_color=daily_pnl["color"],
-            hovertemplate="%{x}<br>PnL: $%{y:+,.2f}<extra></extra>"
-        ))
-        fig_d.update_layout(**LAYOUT, height=260)
-        fig_d.update_yaxes(tickprefix="$")
-        st.plotly_chart(fig_d, use_container_width=True)
+            # Build all cells
+            all_cells = [None] * first_weekday
+            for day in range(1, days_in_month + 1):
+                all_cells.append(day)
+            while len(all_cells) % 7 != 0:
+                all_cells.append(None)
 
-    col3, col4 = st.columns(2)
+            # Render week by week
+            for week_start in range(0, len(all_cells), 7):
+                week = all_cells[week_start:week_start+7]
+                cols = st.columns(7)
+                for i, day in enumerate(week):
+                    with cols[i]:
+                        if day is None:
+                            st.markdown("<div style='min-height:86px;'></div>", unsafe_allow_html=True)
+                        else:
+                            pnl = cal_data.get(day)
+                            info = ops_data.get(day, {})
+                            if pnl is not None:
+                                color = "#22c55e" if pnl > 0 else "#ef4444"
+                                bg = "rgba(34,197,94,0.08)" if pnl > 0 else "rgba(239,68,68,0.08)"
+                                sign = "+" if pnl >= 0 else ""
+                                ops_count = info.get("ops", 0)
+                                st.markdown(f"""
+                                <div style='background:{bg};
+                                     border:1.5px solid {color};
+                                     border-radius:6px;
+                                     padding:10px 8px 8px;
+                                     min-height:86px;
+                                     box-shadow:0 0 0 0.5px rgba(0,0,0,0.3);'>
+                                  <div style='font-size:12px;font-weight:500;color:#94a3b8;margin-bottom:6px;'>{day}</div>
+                                  <div style='font-size:14px;font-weight:600;color:{color};line-height:1.2;'>{sign}{pnl:,.2f}$</div>
+                                  <div style='font-size:10px;color:#64748b;margin-top:4px;'>{ops_count} op{"s" if ops_count>1 else ""}</div>
+                                </div>""", unsafe_allow_html=True)
+                            else:
+                                st.markdown(f"""
+                                <div style='background:rgba(34,197,94,0.05);
+                                     border:1px solid rgba(34,197,94,0.2);
+                                     border-radius:6px;
+                                     padding:10px 8px 8px;
+                                     min-height:86px;'>
+                                  <div style='font-size:12px;font-weight:400;color:#4ade80;'>{day}</div>
+                                  <div style='font-size:10px;color:rgba(74,222,128,0.4);margin-top:4px;'>—</div>
+                                </div>""", unsafe_allow_html=True)
 
-    # ── PnL por símbolo ───────────────────────────────────────────────────────
-    with col3:
-        st.markdown("**PnL neto por símbolo**")
-        sym_pnl = df.groupby("symbol")["pnl_net"].sum().sort_values()
-        colors_sym = [GREEN if v >= 0 else RED for v in sym_pnl.values]
+        # ── Tab: Gráficas ─────────────────────────────────────────────────────────────
+        with tab_charts:
+            col1, col2 = st.columns(2)
 
-        fig_s = go.Figure()
-        fig_s.add_trace(go.Bar(
-            x=sym_pnl.values, y=sym_pnl.index,
-            orientation="h",
-            marker_color=colors_sym,
-            hovertemplate="%{y}: $%{x:+,.2f}<extra></extra>"
-        ))
-        fig_s.update_layout(**LAYOUT, height=260)
-        fig_s.update_xaxes(tickprefix="$")
-        st.plotly_chart(fig_s, use_container_width=True)
+            # ── Equity curve ─────────────────────────────────────────────────────────
+            with col1:
+                st.markdown("**Curva de equity acumulada**")
+                sorted_df = df.sort_values("close_dt").copy()
+                sorted_df["equity"] = stats["balance_ini"] + sorted_df["pnl_net"].cumsum()
+                eq_color = GREEN if stats["pnl_net"] >= 0 else RED
 
-    # ── Distribución ──────────────────────────────────────────────────────────
-    with col4:
-        st.markdown("**Distribución de resultados**")
-        profits = df["profit"].values
-        mn, mx = profits.min(), profits.max()
-        bins = np.linspace(mn, mx, 12)
-        counts, edges = np.histogram(profits, bins=bins)
-        colors_dist = [GREEN if (edges[i]+edges[i+1])/2 >= 0 else RED for i in range(len(counts))]
-        labels = [f"{edges[i]:+.0f}→{edges[i+1]:+.0f}" for i in range(len(counts))]
+                fig_eq = go.Figure()
+                fig_eq.add_trace(go.Scatter(
+                    x=list(range(len(sorted_df)+1)),
+                    y=[stats["balance_ini"]] + sorted_df["equity"].tolist(),
+                    mode="lines",
+                    line=dict(color=eq_color, width=2),
+                    fill="tozeroy",
+                    fillcolor=f"rgba({'34,197,94' if stats['pnl_net']>=0 else '239,68,68'},0.08)",
+                    hovertemplate="Op #%{x}<br>Balance: $%{y:,.2f}<extra></extra>"
+                ))
+                fig_eq.update_layout(**LAYOUT, height=260)
+                fig_eq.update_xaxes(title_text="Operación #")
+                fig_eq.update_yaxes(tickprefix="$")
+                st.plotly_chart(fig_eq, use_container_width=True)
 
-        fig_dist = go.Figure()
-        fig_dist.add_trace(go.Bar(
-            x=labels, y=counts,
-            marker_color=colors_dist,
-            hovertemplate="%{x}<br>%{y} operaciones<extra></extra>"
-        ))
-        fig_dist.update_layout(**LAYOUT, height=260)
-        fig_dist.update_yaxes(title_text="Operaciones")
-        st.plotly_chart(fig_dist, use_container_width=True)
+            # ── Daily PnL ─────────────────────────────────────────────────────────────
+            with col2:
+                st.markdown("**PnL diario**")
+                daily_pnl = df.groupby("close_date")["pnl_net"].sum().reset_index()
+                daily_pnl.columns = ["date", "pnl"]
+                daily_pnl["color"] = daily_pnl["pnl"].apply(lambda v: GREEN if v >= 0 else RED)
 
-    # ── Win rate por hora ─────────────────────────────────────────────────────
-    st.markdown("**Win rate por hora UTC (hora de cierre)**")
-    hr_g = df.groupby("hour").agg(
-        ops=("profit","count"),
-        wins=("win","sum"),
-        pnl=("pnl_net","sum")
-    ).reindex(range(24), fill_value=0).reset_index()
-    hr_g["wr"] = hr_g["wins"] / hr_g["ops"].replace(0, np.nan) * 100
-    hr_g["wr"] = hr_g["wr"].fillna(0)
-    hr_colors = [GREEN if w >= 55 else RED if w < 40 else MUTED for w in hr_g["wr"]]
+                fig_d = go.Figure()
+                fig_d.add_trace(go.Bar(
+                    x=daily_pnl["date"].astype(str),
+                    y=daily_pnl["pnl"],
+                    marker_color=daily_pnl["color"],
+                    hovertemplate="%{x}<br>PnL: $%{y:+,.2f}<extra></extra>"
+                ))
+                fig_d.update_layout(**LAYOUT, height=260)
+                fig_d.update_yaxes(tickprefix="$")
+                st.plotly_chart(fig_d, use_container_width=True)
 
-    fig_hr = go.Figure()
-    fig_hr.add_trace(go.Bar(
-        x=[f"{h:02d}h" for h in hr_g["hour"]],
-        y=hr_g["wr"],
-        marker_color=hr_colors,
-        customdata=np.stack([hr_g["ops"], hr_g["pnl"]], axis=-1),
-        hovertemplate="%{x}<br>WR: %{y:.1f}%<br>Ops: %{customdata[0]}<br>PnL: $%{customdata[1]:+,.2f}<extra></extra>"
-    ))
-    fig_hr.add_hline(y=50, line_dash="dash", line_color=MUTED, opacity=0.5)
-    fig_hr.update_layout(**LAYOUT, height=220)
-    fig_hr.update_yaxes(ticksuffix="%", range=[0,105])
-    st.plotly_chart(fig_hr, use_container_width=True)
+            col3, col4 = st.columns(2)
+
+            # ── PnL por símbolo ───────────────────────────────────────────────────────
+            with col3:
+                st.markdown("**PnL neto por símbolo**")
+                sym_pnl = df.groupby("symbol")["pnl_net"].sum().sort_values()
+                colors_sym = [GREEN if v >= 0 else RED for v in sym_pnl.values]
+
+                fig_s = go.Figure()
+                fig_s.add_trace(go.Bar(
+                    x=sym_pnl.values, y=sym_pnl.index,
+                    orientation="h",
+                    marker_color=colors_sym,
+                    hovertemplate="%{y}: $%{x:+,.2f}<extra></extra>"
+                ))
+                fig_s.update_layout(**LAYOUT, height=260)
+                fig_s.update_xaxes(tickprefix="$")
+                st.plotly_chart(fig_s, use_container_width=True)
+
+            # ── Distribución ──────────────────────────────────────────────────────────
+            with col4:
+                st.markdown("**Distribución de resultados**")
+                profits = df["profit"].values
+                mn, mx = profits.min(), profits.max()
+                bins = np.linspace(mn, mx, 12)
+                counts, edges = np.histogram(profits, bins=bins)
+                colors_dist = [GREEN if (edges[i]+edges[i+1])/2 >= 0 else RED for i in range(len(counts))]
+                labels = [f"{edges[i]:+.0f}→{edges[i+1]:+.0f}" for i in range(len(counts))]
+
+                fig_dist = go.Figure()
+                fig_dist.add_trace(go.Bar(
+                    x=labels, y=counts,
+                    marker_color=colors_dist,
+                    hovertemplate="%{x}<br>%{y} operaciones<extra></extra>"
+                ))
+                fig_dist.update_layout(**LAYOUT, height=260)
+                fig_dist.update_yaxes(title_text="Operaciones")
+                st.plotly_chart(fig_dist, use_container_width=True)
+
+            # ── Win rate por hora ─────────────────────────────────────────────────────
+            st.markdown("**Win rate por hora UTC (hora de cierre)**")
+            hr_g = df.groupby("hour").agg(
+                ops=("profit","count"),
+                wins=("win","sum"),
+                pnl=("pnl_net","sum")
+            ).reindex(range(24), fill_value=0).reset_index()
+            hr_g["wr"] = hr_g["wins"] / hr_g["ops"].replace(0, np.nan) * 100
+            hr_g["wr"] = hr_g["wr"].fillna(0)
+            hr_colors = [GREEN if w >= 55 else RED if w < 40 else MUTED for w in hr_g["wr"]]
+
+            fig_hr = go.Figure()
+            fig_hr.add_trace(go.Bar(
+                x=[f"{h:02d}h" for h in hr_g["hour"]],
+                y=hr_g["wr"],
+                marker_color=hr_colors,
+                customdata=np.stack([hr_g["ops"], hr_g["pnl"]], axis=-1),
+                hovertemplate="%{x}<br>WR: %{y:.1f}%<br>Ops: %{customdata[0]}<br>PnL: $%{customdata[1]:+,.2f}<extra></extra>"
+            ))
+            fig_hr.add_hline(y=50, line_dash="dash", line_color=MUTED, opacity=0.5)
+            fig_hr.update_layout(**LAYOUT, height=220)
+            fig_hr.update_yaxes(ticksuffix="%", range=[0,105])
+            st.plotly_chart(fig_hr, use_container_width=True)
 
 # ── Download ──────────────────────────────────────────────────────────────────
     st.divider()
