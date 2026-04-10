@@ -370,7 +370,7 @@ uploaded = st.file_uploader(
     label_visibility="collapsed"
 )
 
-tab_news, tab_analysis = st.tabs(["📰 Noticias & Calendario", "📊 Análisis de Historial"])
+tab_news, tab_videos, tab_analysis = st.tabs(["📰 Noticias & Calendario", "🎥 Análisis en Vídeo", "📊 Análisis de Historial"])
 
 with tab_news:
     # Header
@@ -535,6 +535,47 @@ with tab_news:
             st.info("📡 Los datos de la próxima semana aún no están disponibles. Prueba el viernes o sábado.")
 
 # ── TABS — always visible ─────────────────────────────────────────────────────
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB VÍDEOS — análisis semanales de mercado
+# ══════════════════════════════════════════════════════════════════════════════
+with tab_videos:
+    st.markdown("### 🎥 Análisis de Mercado — CRZ Trader")
+    st.caption("Actualización semanal · Zoom")
+    st.divider()
+
+    # ── Lista de vídeos ───────────────────────────────────────────────────────
+    # Para añadir un nuevo vídeo, añade un dict a esta lista
+    videos = [
+        {
+            "titulo":  "Análisis Semanal de Mercado",
+            "fecha":   "Abril 2026",
+            "desc":    "Revisión semanal de NAS100, SP500, XAU y XAG. Niveles clave, sesgo direccional y eventos de la semana.",
+            "url":     "https://us06web.zoom.us/rec/share/Wk5tcXky009ZpwwdPtzcYfyA484iREsoRF6icpmJU4FlFALMyAH6mRdKpO_MoU6a.SrfWLe9RLHaugmDI",
+            "codigo":  "Yo&4!7GZ",
+        },
+    ]
+
+    for v in videos:
+        card = (
+            "<div style='background:#161c28;border:1px solid #2a3a52;border-left:4px solid #2dd4bf;"
+            "border-radius:4px;padding:16px 20px;margin-bottom:16px;'>"
+            "<div style='display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;'>"
+            "<div>"
+            "<div style='font-size:16px;font-weight:600;color:#f1f5f9;margin-bottom:4px;'>🎬 " + v["titulo"] + "</div>"
+            "<div style='font-size:11px;color:#64748b;margin-bottom:8px;'>📅 " + v["fecha"] + "</div>"
+            "<div style='font-size:13px;color:#94a3b8;margin-bottom:12px;'>" + v["desc"] + "</div>"
+            "</div></div>"
+            "<div style='display:flex;gap:12px;flex-wrap:wrap;align-items:center;'>"
+            "<a href='" + v["url"] + "' target='_blank' style='background:#2dd4bf;color:#0f172a;"
+            "font-weight:700;font-size:13px;padding:8px 18px;border-radius:4px;text-decoration:none;'>▶ Ver vídeo</a>"
+            "<div style='font-size:11px;color:#64748b;'>🔑 Código de acceso: <span style='color:#f1f5f9;font-weight:600;letter-spacing:0.05em;'>" + v["codigo"] + "</span></div>"
+            "</div></div>"
+        )
+        st.markdown(card, unsafe_allow_html=True)
+
+    st.markdown("")
+    st.info("📌 Cada semana se añade el nuevo análisis. Los vídeos anteriores quedan disponibles para repaso.")
 
 with tab_analysis:
     if not uploaded:
