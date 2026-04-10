@@ -699,15 +699,32 @@ with tab_charts_live:
     # Asset selector
     activo = st.selectbox(
         "Selecciona activo",
-        ["NQ1! — NAS100 Futuros", "ES1! — SP500 Futuros", "XAUUSD — Oro", "XAGUSD — Plata"],
+        [
+            "NQ1! — NAS100 Futuros",
+            "ES1! — SP500 Futuros",
+            "YM1! — Dow Jones Futuros",
+            "XAUUSD — Oro",
+            "XAGUSD — Plata",
+            "VIX — Índice de Volatilidad",
+            "DXY — Índice del Dólar",
+            "US100 — Nasdaq 100 CFD",
+            "US500 — S&P 500 CFD",
+            "US30 — Dow Jones CFD",
+        ],
         label_visibility="collapsed"
     )
 
     symbol_map = {
-        "NQ1! — NAS100 Futuros": "CME_MINI:NQ1!",
-        "ES1! — SP500 Futuros":  "CME_MINI:ES1!",
-        "XAUUSD — Oro":          "OANDA:XAUUSD",
-        "XAGUSD — Plata":        "OANDA:XAGUSD",
+        "NQ1! — NAS100 Futuros":     "CME_MINI:NQ1!",
+        "ES1! — SP500 Futuros":      "CME_MINI:ES1!",
+        "YM1! — Dow Jones Futuros":  "CME_MINI:YM1!",
+        "XAUUSD — Oro":              "OANDA:XAUUSD",
+        "XAGUSD — Plata":            "OANDA:XAGUSD",
+        "VIX — Índice de Volatilidad": "TVC:VIX",
+        "DXY — Índice del Dólar":    "TVC:DXY",
+        "US100 — Nasdaq 100 CFD":    "CAPITALCOM:US100",
+        "US500 — S&P 500 CFD":       "CAPITALCOM:US500",
+        "US30 — Dow Jones CFD":      "CAPITALCOM:US30",
     }
     symbol = symbol_map[activo]
 
@@ -747,18 +764,21 @@ with tab_charts_live:
     st.markdown("")
     # Quick links to all 4 assets
     st.markdown("**Acceso rápido:**")
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
     links = [
         ("📈 NAS100", "https://www.tradingview.com/chart/?symbol=CME_MINI%3ANQ1%21", "#3b82f6"),
         ("📈 SP500",  "https://www.tradingview.com/chart/?symbol=CME_MINI%3AES1%21", "#8b5cf6"),
+        ("📈 DOW",    "https://www.tradingview.com/chart/?symbol=CME_MINI%3AYM1%21", "#ec4899"),
         ("🥇 Oro",    "https://www.tradingview.com/chart/?symbol=OANDA%3AXAUUSD",    "#f59e0b"),
         ("🥈 Plata",  "https://www.tradingview.com/chart/?symbol=OANDA%3AXAGUSD",    "#94a3b8"),
+        ("😨 VIX",    "https://www.tradingview.com/chart/?symbol=TVC%3AVIX",         "#ef4444"),
+        ("💵 DXY",    "https://www.tradingview.com/chart/?symbol=TVC%3ADXY",         "#22c55e"),
     ]
-    for col, (name, url, color) in zip([col1,col2,col3,col4], links):
+    for col, (name, url, color) in zip([col1,col2,col3,col4,col5,col6,col7], links):
         col.markdown(
             f"<a href='{url}' target='_blank' style='display:block;background:#161c28;"
             f"border:1px solid #2a3a52;border-top:3px solid {color};border-radius:4px;"
-            f"padding:10px;text-align:center;text-decoration:none;font-size:13px;"
+            f"padding:8px 4px;text-align:center;text-decoration:none;font-size:12px;"
             f"font-weight:600;color:{color};'>{name}</a>",
             unsafe_allow_html=True
         )
