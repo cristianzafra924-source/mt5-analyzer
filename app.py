@@ -286,46 +286,82 @@ def fetch_news(week_offset=0):
     date_from = monday.strftime("%Y-%m-%d")
     date_to   = (monday + timedelta(days=6)).strftime("%Y-%m-%d")
 
-    # Try 1: ForexFactory
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.forexfactory.com/",
+        "Origin": "https://www.forexfactory.com",
+    }
+
+    # Try 1: ForexFactory (with browser headers)
     try:
         suffix = "thisweek" if week_offset == 0 else "nextweek"
         r = requests.get(
             f"https://nfs.faireconomy.media/ff_calendar_{suffix}.json",
-            timeout=6,
-            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            timeout=8, headers=headers
         )
-        if r.status_code == 200 and r.json():
-            return r.json(), date_from, date_to
+        if r.status_code == 200:
+            data = r.json()
+            if data:
+                return data, date_from, date_to
     except:
         pass
 
-    # Try 2: FMP Economic Calendar (free tier)
+    # Try 2: FMP Economic Calendar
     try:
         r = requests.get(
             f"https://financialmodelingprep.com/api/v3/economic_calendar?from={date_from}&to={date_to}&apikey=demo",
-            timeout=6
+            timeout=8
         )
         if r.status_code == 200:
             raw = r.json()
-            # normalize to FF format
-            events = []
-            for e in raw:
-                events.append({
-                    "date":     e.get("date",""),
-                    "time":     e.get("date","")[-8:-3] if e.get("date","") else "",
-                    "country":  e.get("country",""),
-                    "impact":   {"High":"High","Medium":"Medium","Low":"Low"}.get(e.get("impact",""),"Low"),
-                    "title":    e.get("event",""),
-                    "forecast": e.get("estimate",""),
-                    "previous": e.get("previous",""),
-                    "actual":   e.get("actual",""),
-                })
-            if events:
+            if isinstance(raw, list) and raw:
+                events = []
+                for e in raw:
+                    events.append({
+                        "date":     e.get("date",""),
+                        "time":     e.get("date","")[11:16] if len(e.get("date","")) > 10 else "",
+                        "country":  e.get("country",""),
+                        "impact":   e.get("impact","Low"),
+                        "title":    e.get("event",""),
+                        "forecast": e.get("estimate",""),
+                        "previous": e.get("previous",""),
+                        "actual":   e.get("actual",""),
+                    })
+                return events, date_from, date_to
+    except:
+        pass
+
+    # Try 3: Myfxbook calendar (public JSON)
+    try:
+        r = requests.get(
+            f"https://www.myfxbook.com/api/get-economy-calendar-event.json?start={date_from}&end={date_to}",
+            timeout=8, headers=headers
+        )
+        if r.status_code == 200:
+            raw = r.json()
+            events_list = raw.get("calendarEventsModel", {}).get("events", [])
+            if events_list:
+                events = []
+                for e in events_list:
+                    imp = e.get("impactTitle", "Low")
+                    events.append({
+                        "date":     e.get("date",""),
+                        "time":     e.get("time",""),
+                        "country":  e.get("currency",""),
+                        "impact":   "High" if imp=="High" else "Medium" if imp=="Medium" else "Low",
+                        "title":    e.get("name",""),
+                        "forecast": e.get("forecast",""),
+                        "previous": e.get("previous",""),
+                        "actual":   e.get("actual",""),
+                    })
                 return events, date_from, date_to
     except:
         pass
 
     return None, date_from, date_to
+
 
 
 uploaded = st.file_uploader(
