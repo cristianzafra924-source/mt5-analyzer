@@ -539,15 +539,17 @@ with tab_news:
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB VÍDEOS — análisis semanales de mercado
 # ══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB VÍDEOS — análisis semanales de mercado
+# ══════════════════════════════════════════════════════════════════════════════
 with tab_videos:
     st.markdown("### 🎥 Análisis de Mercado — CRZ Trader")
     st.caption("Actualización semanal · Zoom")
     st.divider()
 
-    # ── Lista de vídeos ───────────────────────────────────────────────────────
-    # Para añadir un nuevo vídeo, añade un dict a esta lista
     videos = [
         {
+            "id":      "video_001",
             "titulo":  "Análisis Semanal de Mercado",
             "fecha":   "Abril 2026",
             "desc":    "Revisión semanal de NAS100, SP500, XAU y XAG. Niveles clave, sesgo direccional y eventos de la semana.",
@@ -556,26 +558,90 @@ with tab_videos:
         },
     ]
 
+    # ── Ratings stored in session state ───────────────────────────────────────
+    if "ratings" not in st.session_state:
+        st.session_state.ratings = {}
+    if "user_rated" not in st.session_state:
+        st.session_state.user_rated = {}
+
     for v in videos:
+        vid_id = v["id"]
+
+        # Video card
         card = (
             "<div style='background:#161c28;border:1px solid #2a3a52;border-left:4px solid #2dd4bf;"
-            "border-radius:4px;padding:16px 20px;margin-bottom:16px;'>"
-            "<div style='display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;'>"
-            "<div>"
+            "border-radius:4px;padding:16px 20px;margin-bottom:8px;'>"
             "<div style='font-size:16px;font-weight:600;color:#f1f5f9;margin-bottom:4px;'>🎬 " + v["titulo"] + "</div>"
             "<div style='font-size:11px;color:#64748b;margin-bottom:8px;'>📅 " + v["fecha"] + "</div>"
-            "<div style='font-size:13px;color:#94a3b8;margin-bottom:12px;'>" + v["desc"] + "</div>"
-            "</div></div>"
+            "<div style='font-size:13px;color:#94a3b8;margin-bottom:14px;'>" + v["desc"] + "</div>"
             "<div style='display:flex;gap:12px;flex-wrap:wrap;align-items:center;'>"
             "<a href='" + v["url"] + "' target='_blank' style='background:#2dd4bf;color:#0f172a;"
             "font-weight:700;font-size:13px;padding:8px 18px;border-radius:4px;text-decoration:none;'>▶ Ver vídeo</a>"
-            "<div style='font-size:11px;color:#64748b;'>🔑 Código de acceso: <span style='color:#f1f5f9;font-weight:600;letter-spacing:0.05em;'>" + v["codigo"] + "</span></div>"
+            "<div style='font-size:11px;color:#64748b;'>🔑 Código: <span style='color:#f1f5f9;font-weight:600;'>" + v["codigo"] + "</span></div>"
             "</div></div>"
         )
         st.markdown(card, unsafe_allow_html=True)
 
+        # ── Rating section ────────────────────────────────────────────────────
+        ratings_list = st.session_state.ratings.get(vid_id, [])
+        avg = sum(ratings_list) / len(ratings_list) if ratings_list else 0
+        stars_display = "⭐" * round(avg) + "☆" * (5 - round(avg)) if avg else "☆☆☆☆☆"
+
+        col_r1, col_r2, col_r3 = st.columns([2,2,3])
+        with col_r1:
+            st.markdown(f"<div style='font-size:12px;color:#64748b;margin-top:4px;'>Valoración media: <span style='color:#f59e0b;font-size:16px;'>{stars_display}</span> <span style='color:#475569;'>({len(ratings_list)} votos)</span></div>", unsafe_allow_html=True)
+        with col_r2:
+            if not st.session_state.user_rated.get(vid_id):
+                user_stars = st.select_slider(
+                    "Tu valoración",
+                    options=[1,2,3,4,5],
+                    value=5,
+                    format_func=lambda x: "⭐"*x,
+                    key=f"slider_{vid_id}",
+                    label_visibility="collapsed"
+                )
+                if st.button("Valorar", key=f"rate_{vid_id}"):
+                    if vid_id not in st.session_state.ratings:
+                        st.session_state.ratings[vid_id] = []
+                    st.session_state.ratings[vid_id].append(user_stars)
+                    st.session_state.user_rated[vid_id] = True
+                    st.rerun()
+            else:
+                st.markdown("<div style='font-size:12px;color:#22c55e;margin-top:8px;'>✅ Ya has valorado este vídeo</div>", unsafe_allow_html=True)
+
+        st.divider()
+
+    # ── Galería de imágenes ───────────────────────────────────────────────────
+    st.markdown("### 📊 Escenarios & Análisis Gráfico")
+    st.caption("Capturas de mercado — niveles, setups y zonas de interés")
+    st.markdown("")
+
+    # Upload images
+    imgs = st.file_uploader(
+        "Sube capturas del mercado (NAS100, SP500, XAU, XAG)",
+        type=["png","jpg","jpeg","webp"],
+        accept_multiple_files=True,
+        key="market_images"
+    )
+
+    if imgs:
+        cols_img = st.columns(3)
+        for i, img in enumerate(imgs):
+            with cols_img[i % 3]:
+                st.image(img, use_container_width=True)
+                name = img.name.replace("_"," ").replace("-"," ").rsplit(".",1)[0]
+                st.markdown(f"<div style='font-size:11px;color:#64748b;text-align:center;margin-top:4px;'>{name}</div>", unsafe_allow_html=True)
+    else:
+        st.markdown("""
+<div style='background:#0f1117;border:1px dashed #2a3a52;border-radius:4px;padding:32px;text-align:center;'>
+  <div style='font-size:32px;margin-bottom:8px;'>📈</div>
+  <div style='font-size:13px;color:#475569;'>Sube capturas de los gráficos con los setups de la semana</div>
+  <div style='font-size:11px;color:#334155;margin-top:4px;'>NAS100 · SP500 · XAU · XAG</div>
+</div>""", unsafe_allow_html=True)
+
     st.markdown("")
     st.info("📌 Cada semana se añade el nuevo análisis. Los vídeos anteriores quedan disponibles para repaso.")
+
 
 with tab_analysis:
     if not uploaded:
