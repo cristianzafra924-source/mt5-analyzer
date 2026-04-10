@@ -23,13 +23,17 @@ st.markdown("""
 
 html, body, [class*="css"] {
     font-family: 'Inter', sans-serif;
-    font-weight: 300;
+    font-weight: 400;
     letter-spacing: 0.01em;
+    color: #e2e8f0;
 }
 
 .stApp { background-color: #080a0e; }
 
-
+/* General text override — todo el texto claro en modo oscuro */
+p, span, div, li, label, h1, h2, h3, h4, h5 {
+    color: #e2e8f0;
+}
 
 div[data-testid="metric-container"] {
     background: #0f1117;
@@ -40,7 +44,7 @@ div[data-testid="metric-container"] {
     box-shadow: 2px 2px 0px #0a0c10;
 }
 div[data-testid="metric-container"] label {
-    color: #64748b !important;
+    color: #94a3b8 !important;
     font-size: 10px !important;
     text-transform: uppercase;
     letter-spacing: 0.12em;
@@ -49,25 +53,26 @@ div[data-testid="metric-container"] label {
 div[data-testid="stMetricValue"] {
     font-family: 'JetBrains Mono', monospace !important;
     font-size: 22px !important;
-    font-weight: 500 !important;
-    color: #e2e8f0 !important;
+    font-weight: 600 !important;
+    color: #f1f5f9 !important;
     letter-spacing: -0.02em;
 }
 div[data-testid="stMetricDelta"] {
     font-family: 'JetBrains Mono', monospace !important;
     font-size: 11px !important;
     font-weight: 400 !important;
+    color: #94a3b8 !important;
 }
 
 .stTabs [data-baseweb="tab-list"] {
     background: transparent;
-    border-bottom: 0.5px solid #161b27;
+    border-bottom: 0.5px solid #1e2a3a;
     gap: 0; padding: 0;
 }
 .stTabs [data-baseweb="tab"] {
-    color: #2d3748;
+    color: #64748b;
     font-size: 11px;
-    font-weight: 400;
+    font-weight: 500;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     padding: 10px 18px;
@@ -75,21 +80,37 @@ div[data-testid="stMetricDelta"] {
 }
 .stTabs [aria-selected="true"] {
     background: transparent !important;
+    color: #e2e8f0 !important;
+    border-bottom: 2px solid #2dd4bf !important;
+}
+
+/* Selectbox, inputs */
+.stSelectbox label, .stMultiSelect label, .stTextArea label {
     color: #94a3b8 !important;
-    border-bottom: 1px solid #94a3b8 !important;
+    font-size: 11px !important;
+}
+.stSelectbox div, .stTextArea textarea {
+    color: #e2e8f0 !important;
+    background-color: #0f1117 !important;
+}
+
+/* Captions y textos secundarios */
+.stCaption, [data-testid="stCaptionContainer"] {
+    color: #64748b !important;
 }
 
 [data-testid="stFileUploader"] {
     background: #0c0e14;
-    border: 0.5px dashed #161b27;
+    border: 0.5px dashed #1e2a3a;
     border-radius: 6px;
     padding: 20px;
 }
+[data-testid="stFileUploader"] * { color: #94a3b8 !important; }
 
 [data-testid="stDataFrame"] { border-radius: 4px; overflow: hidden; }
-[data-testid="stDataFrame"] * { font-size: 12px !important; font-family: 'JetBrains Mono', monospace !important; font-weight: 300 !important; }
+[data-testid="stDataFrame"] * { font-size: 12px !important; font-family: 'JetBrains Mono', monospace !important; font-weight: 400 !important; color: #e2e8f0 !important; }
 
-hr { border-color: #161b27; border-width: 0.5px; }
+hr { border-color: #1e2a3a; border-width: 0.5px; }
 
 .main-header {
     font-family: 'Inter', sans-serif;
@@ -101,8 +122,8 @@ hr { border-color: #161b27; border-width: 0.5px; }
 .main-sub { color: #64748b; font-size: 12px; margin-bottom: 28px; font-weight: 300; letter-spacing: 0.06em; }
 
 .section-label {
-    font-size: 9px; font-weight: 600; letter-spacing: 0.15em;
-    text-transform: uppercase; color: #64748b; margin: 24px 0 8px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: #94a3b8; margin: 24px 0 8px;
     padding-bottom: 6px;
     border-bottom: 1px solid #1e2a3a;
 }
@@ -116,8 +137,16 @@ hr { border-color: #161b27; border-width: 0.5px; }
     border-left: 4px solid #2dd4bf;
     box-shadow: 2px 2px 0px #0a0c10;
 }
-.alumno-name { font-size: 15px; font-weight: 500; color: #e2e8f0; letter-spacing: 0.02em; }
-.alumno-meta { font-size: 11px; color: #64748b; margin-top: 4px; font-weight: 300; letter-spacing: 0.02em; }
+.alumno-name { font-size: 15px; font-weight: 600; color: #f1f5f9; letter-spacing: 0.02em; }
+.alumno-meta { font-size: 11px; color: #94a3b8; margin-top: 4px; font-weight: 300; letter-spacing: 0.02em; }
+
+/* Info/warning boxes */
+.stAlert { color: #e2e8f0 !important; }
+.stAlert p { color: #e2e8f0 !important; }
+
+/* Markdown text */
+.stMarkdown p { color: #e2e8f0 !important; }
+.stMarkdown h3 { color: #f1f5f9 !important; }
 </style>
 """, unsafe_allow_html=True)
 
