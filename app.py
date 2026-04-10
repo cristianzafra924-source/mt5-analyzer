@@ -370,7 +370,9 @@ uploaded = st.file_uploader(
     label_visibility="collapsed"
 )
 
-tab_news, tab_videos, tab_analysis = st.tabs(["📰 Noticias & Calendario", "🎥 Análisis en Vídeo", "📊 Análisis de Historial"])
+tab_news, tab_videos, tab_charts_live, tab_analysis = st.tabs([
+    "📰 Noticias & Calendario", "🎥 Análisis en Vídeo", "📡 Mercado en Vivo", "📊 Análisis de Historial"
+])
 
 with tab_news:
     # Header
@@ -685,6 +687,81 @@ with tab_videos:
     st.markdown("")
     st.info("📌 Cada semana se añade el nuevo análisis. Los vídeos anteriores quedan disponibles para repaso.")
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB MERCADO EN VIVO — TradingView widgets
+# ══════════════════════════════════════════════════════════════════════════════
+with tab_charts_live:
+    st.markdown("### 📡 Mercado en Vivo")
+    st.caption("Gráficos en tiempo real · NAS100 · SP500 · XAU · XAG")
+    st.divider()
+
+    # Asset selector
+    activo = st.selectbox(
+        "Selecciona activo",
+        ["NQ1! — NAS100 Futuros", "ES1! — SP500 Futuros", "XAUUSD — Oro", "XAGUSD — Plata"],
+        label_visibility="collapsed"
+    )
+
+    symbol_map = {
+        "NQ1! — NAS100 Futuros": "CME_MINI:NQ1!",
+        "ES1! — SP500 Futuros":  "CME_MINI:ES1!",
+        "XAUUSD — Oro":          "OANDA:XAUUSD",
+        "XAGUSD — Plata":        "OANDA:XAGUSD",
+    }
+    symbol = symbol_map[activo]
+
+    # TradingView Advanced Chart Widget
+    tv_html = f"""
+<div style='border-radius:6px;overflow:hidden;'>
+<div class="tradingview-widget-container" style="height:520px;">
+  <div id="tradingview_chart" style="height:100%;"></div>
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+  <script type="text/javascript">
+  new TradingView.widget({{
+    "width": "100%",
+    "height": 520,
+    "symbol": "{symbol}",
+    "interval": "60",
+    "timezone": "Europe/Madrid",
+    "theme": "dark",
+    "style": "1",
+    "locale": "es",
+    "toolbar_bg": "#0f1117",
+    "enable_publishing": false,
+    "hide_top_toolbar": false,
+    "hide_legend": false,
+    "save_image": true,
+    "container_id": "tradingview_chart",
+    "studies": ["Volume@tv-basicstudies"],
+    "show_popup_button": true,
+    "popup_width": "1000",
+    "popup_height": "650"
+  }});
+  </script>
+</div>
+</div>"""
+
+    st.components.v1.html(tv_html, height=540)
+
+    st.markdown("")
+    # Quick links to all 4 assets
+    st.markdown("**Acceso rápido:**")
+    col1, col2, col3, col4 = st.columns(4)
+    links = [
+        ("📈 NAS100", "https://www.tradingview.com/chart/?symbol=CME_MINI%3ANQ1%21", "#3b82f6"),
+        ("📈 SP500",  "https://www.tradingview.com/chart/?symbol=CME_MINI%3AES1%21", "#8b5cf6"),
+        ("🥇 Oro",    "https://www.tradingview.com/chart/?symbol=OANDA%3AXAUUSD",    "#f59e0b"),
+        ("🥈 Plata",  "https://www.tradingview.com/chart/?symbol=OANDA%3AXAGUSD",    "#94a3b8"),
+    ]
+    for col, (name, url, color) in zip([col1,col2,col3,col4], links):
+        col.markdown(
+            f"<a href='{url}' target='_blank' style='display:block;background:#161c28;"
+            f"border:1px solid #2a3a52;border-top:3px solid {color};border-radius:4px;"
+            f"padding:10px;text-align:center;text-decoration:none;font-size:13px;"
+            f"font-weight:600;color:{color};'>{name}</a>",
+            unsafe_allow_html=True
+        )
 
 with tab_analysis:
     if not uploaded:
