@@ -624,27 +624,55 @@ with tab_charts:
 # ── Tab: Noticias ─────────────────────────────────────────────────────────────
 with tab_news:
 
-    @st.cache_data(ttl=1800)
-    def fetch_news():
-        try:
-            url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
-            r = requests.get(url, timeout=8)
-            if r.status_code == 200:
-                return r.json()
-        except:
-            pass
-        return None
+    @st.cache_data(ttl=900)
+    def fetch_news(week_offset=0):
+        """Fetch economic calendar - tries multiple sources"""
+        from datetime import datetime, timedelta
+        today = datetime.now()
+        monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
+        date_from = monday.strftime("%Y-%m-%d")
+        date_to   = (monday + timedelta(days=6)).strftime("%Y-%m-%d")
 
-    @st.cache_data(ttl=1800)
-    def fetch_news_next():
+        # Try 1: ForexFactory
         try:
-            url = "https://nfs.faireconomy.media/ff_calendar_nextweek.json"
-            r = requests.get(url, timeout=8)
-            if r.status_code == 200:
-                return r.json()
+            suffix = "thisweek" if week_offset == 0 else "nextweek"
+            r = requests.get(
+                f"https://nfs.faireconomy.media/ff_calendar_{suffix}.json",
+                timeout=6,
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            )
+            if r.status_code == 200 and r.json():
+                return r.json(), date_from, date_to
         except:
             pass
-        return None
+
+        # Try 2: FMP Economic Calendar (free tier)
+        try:
+            r = requests.get(
+                f"https://financialmodelingprep.com/api/v3/economic_calendar?from={date_from}&to={date_to}&apikey=demo",
+                timeout=6
+            )
+            if r.status_code == 200:
+                raw = r.json()
+                # normalize to FF format
+                events = []
+                for e in raw:
+                    events.append({
+                        "date":     e.get("date",""),
+                        "time":     e.get("date","")[-8:-3] if e.get("date","") else "",
+                        "country":  e.get("country",""),
+                        "impact":   {"High":"High","Medium":"Medium","Low":"Low"}.get(e.get("impact",""),"Low"),
+                        "title":    e.get("event",""),
+                        "forecast": e.get("estimate",""),
+                        "previous": e.get("previous",""),
+                        "actual":   e.get("actual",""),
+                    })
+                if events:
+                    return events, date_from, date_to
+        except:
+            pass
+
+        return None, date_from, date_to
 
     # Header
     col_n1, col_n2 = st.columns([3,1])
@@ -678,8 +706,8 @@ with tab_news:
     impact_color = {"High": "#ef4444", "Medium": "#f59e0b", "Low": "#64748b", "Holiday": "#3b82f6"}
     impact_emoji = {"High": "🔴", "Medium": "🟡", "Low": "⚪", "Holiday": "🔵"}
 
-    ff_data      = fetch_news()
-    ff_data_next = fetch_news_next()
+    ff_data, date_from, date_to           = fetch_news(0)
+    ff_data_next, date_from_next, date_to_next = fetch_news(1)
 
     def parse_events(raw):
         events = []
@@ -773,6 +801,7 @@ with tab_news:
     week1, week2 = st.tabs(["📅 Esta semana", "📅 Próxima semana"])
     with week1:
         if ff_data:
+            st.caption(f"Semana del {date_from} al {date_to}")
             render_week(ff_data, "esta_semana")
         else:
             st.info("📡 No se pudieron cargar los eventos en tiempo real. Mostrando eventos clave de referencia.")
@@ -801,9 +830,10 @@ with tab_news:
 
     with week2:
         if ff_data_next:
+            st.caption(f"Semana del {date_from_next} al {date_to_next}")
             render_week(ff_data_next, "proxima_semana")
         else:
-            st.info("📡 No hay datos disponibles para la próxima semana aún.")
+            st.info("📡 Los datos de la próxima semana aún no están disponibles. Prueba el viernes o sábado.")
 
 # ── Download ──────────────────────────────────────────────────────────────────
 col_dl1, col_dl2 = st.columns([1,4])
