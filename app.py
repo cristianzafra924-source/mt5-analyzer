@@ -613,68 +613,68 @@ with tab_videos:
 
     # ── Galería de imágenes con análisis ─────────────────────────────────────
     st.markdown("### 📊 Escenarios & Análisis Gráfico")
-    st.caption("Sube capturas con tu análisis escrito o nota de voz")
+    st.caption("Setups semanales — niveles, sesgo y zonas de interés")
     st.markdown("")
 
-    # Session state for image notes
-    if "img_notes" not in st.session_state:
-        st.session_state.img_notes = {}
-    if "img_audios" not in st.session_state:
-        st.session_state.img_audios = {}
+    # ── Lista de análisis permanentes (añade uno nuevo cada semana) ───────────
+    REPO = "https://raw.githubusercontent.com/cristianzafra924-source/mt5-analyzer/principal"
 
-    imgs = st.file_uploader(
-        "Sube capturas del mercado (NAS100, SP500, XAU, XAG)",
-        type=["png","jpg","jpeg","webp"],
-        accept_multiple_files=True,
-        key="market_images"
-    )
+    analisis_fijos = [
+        {
+            "semana":  "Semana 15 · Abril 2026",
+            "activo":  "NAS100",
+            "imagen":  "Captura de pantalla 2026-04-10 120932.png",
+            "audio":   "audio_2026-04-10_12-16-25.ogg",
+            "texto":   "Añade aquí tu análisis: niveles clave, sesgo direccional, confluencias y zonas de interés.",
+        },
+    ]
 
-    if imgs:
-        for i, img in enumerate(imgs):
-            img_key = f"img_{img.name}"
-            st.markdown(f"""
-<div style='background:#161c28;border:1px solid #2a3a52;border-radius:4px;padding:14px 16px;margin-bottom:16px;'>
-  <div style='font-size:12px;font-weight:600;color:#2dd4bf;letter-spacing:0.06em;margin-bottom:10px;'>
-    📈 {img.name.replace("_"," ").replace("-"," ").rsplit(".",1)[0].upper()}
-  </div>
+    for a in analisis_fijos:
+        st.markdown(f"""
+<div style='background:#161c28;border:1px solid #2a3a52;border-left:4px solid #f59e0b;
+     border-radius:4px;padding:12px 16px;margin-bottom:8px;'>
+  <div style='font-size:11px;font-weight:700;color:#f59e0b;letter-spacing:0.08em;'>{a["activo"]} · {a["semana"]}</div>
 </div>""", unsafe_allow_html=True)
 
-            col_i, col_t = st.columns([1, 1])
-            with col_i:
-                st.image(img, use_container_width=True)
+        col_i, col_t = st.columns([1,1])
+        with col_i:
+            img_url = f"{REPO}/{requests.utils.quote(a['imagen'])}"
+            st.image(img_url, use_container_width=True)
 
-            with col_t:
-                # Text analysis
-                note = st.text_area(
-                    "✍️ Análisis escrito",
-                    value=st.session_state.img_notes.get(img_key, ""),
-                    placeholder="Describe el setup, niveles clave, sesgo, confluencias...",
-                    height=160,
-                    key=f"note_{img_key}"
-                )
-                if note:
-                    st.session_state.img_notes[img_key] = note
+        with col_t:
+            st.markdown(f"<div style='font-size:13px;color:#94a3b8;line-height:1.7;padding:8px 0;'>{a['texto']}</div>", unsafe_allow_html=True)
+            if a.get("audio"):
+                audio_url = f"{REPO}/{requests.utils.quote(a['audio'])}"
+                try:
+                    r = requests.get(audio_url, timeout=8)
+                    if r.status_code == 200:
+                        st.markdown("<div style='font-size:11px;color:#64748b;margin-top:12px;'>🎙️ Nota de voz</div>", unsafe_allow_html=True)
+                        st.audio(r.content, format="audio/ogg")
+                except:
+                    st.caption("Audio no disponible")
 
-                # Audio note
-                st.markdown("<div style='font-size:11px;color:#64748b;margin-top:8px;margin-bottom:4px;'>🎙️ Nota de voz</div>", unsafe_allow_html=True)
-                audio = st.file_uploader(
-                    "Adjunta audio",
-                    type=["mp3","wav","m4a","ogg"],
-                    key=f"audio_{img_key}",
-                    label_visibility="collapsed"
-                )
-                if audio:
-                    st.audio(audio)
-                    st.session_state.img_audios[img_key] = True
+        st.divider()
 
-            st.divider()
-    else:
-        st.markdown("""
-<div style='background:#0f1117;border:1px dashed #2a3a52;border-radius:4px;padding:32px;text-align:center;'>
-  <div style='font-size:32px;margin-bottom:8px;'>📈</div>
-  <div style='font-size:13px;color:#475569;'>Sube capturas de los gráficos con los setups de la semana</div>
-  <div style='font-size:11px;color:#334155;margin-top:4px;'>Cada imagen puede tener análisis escrito + nota de voz</div>
-</div>""", unsafe_allow_html=True)
+    # ── Upload extra (opcional, sesión actual) ────────────────────────────────
+    with st.expander("➕ Subir análisis adicional para esta sesión"):
+        imgs = st.file_uploader(
+            "Imagen",
+            type=["png","jpg","jpeg","webp"],
+            accept_multiple_files=True,
+            key="market_images"
+        )
+        if imgs:
+            for img in imgs:
+                img_key = f"img_{img.name}"
+                col_i2, col_t2 = st.columns([1,1])
+                with col_i2:
+                    st.image(img, use_container_width=True)
+                with col_t2:
+                    st.text_area("✍️ Análisis", placeholder="Describe el setup...", height=120, key=f"note_{img_key}")
+                    audio2 = st.file_uploader("🎙️ Audio", type=["mp3","wav","m4a","ogg"], key=f"audio_{img_key}", label_visibility="collapsed")
+                    if audio2:
+                        st.audio(audio2)
+                st.divider()
 
     st.markdown("")
     st.info("📌 Cada semana se añade el nuevo análisis. Los vídeos anteriores quedan disponibles para repaso.")
