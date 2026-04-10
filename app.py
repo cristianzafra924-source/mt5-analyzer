@@ -696,7 +696,47 @@ with tab_charts_live:
     st.caption("Gráficos en tiempo real · NAS100 · SP500 · XAU · XAG")
     st.divider()
 
-    # Asset selector
+    # ── Análisis marcado del analista ─────────────────────────────────────────
+    st.markdown("#### 🎯 Análisis del Analista — CRZ Trader")
+    st.caption("Gráfico con niveles y zonas marcadas · Actualizado semanalmente")
+
+    # Lista de snapshots — añade uno nuevo cada semana
+    snapshots = [
+        {
+            "titulo": "NAS100 — Semana 15 · Abril 2026",
+            "url":    "https://www.tradingview.com/x/sFjdmxk7/",
+            "desc":   "Niveles clave marcados con zonas de interés y sesgo direccional.",
+        },
+    ]
+
+    for snap in snapshots:
+        st.markdown(
+            "<div style='background:#161c28;border:1px solid #2a3a52;border-left:4px solid #2dd4bf;"
+            "border-radius:4px;padding:10px 16px;margin-bottom:8px;display:flex;"
+            "justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;'>"
+            "<div>"
+            "<div style='font-size:14px;font-weight:600;color:#f1f5f9;'>📊 " + snap["titulo"] + "</div>"
+            "<div style='font-size:11px;color:#64748b;margin-top:3px;'>" + snap["desc"] + "</div>"
+            "</div>"
+            "<a href='" + snap["url"] + "' target='_blank' style='background:#2dd4bf;color:#0f172a;"
+            "font-weight:700;font-size:12px;padding:7px 16px;border-radius:4px;text-decoration:none;'>"
+            "Ver análisis ↗</a>"
+            "</div>",
+            unsafe_allow_html=True
+        )
+        # Embed snapshot image directly
+        snap_img_url = snap["url"].rstrip("/") + ".png"
+        st.markdown(
+            f"<a href='{snap['url']}' target='_blank'>"
+            f"<img src='{snap_img_url}' style='width:100%;border-radius:4px;border:1px solid #2a3a52;"
+            f"margin-bottom:16px;cursor:pointer;' title='Clic para abrir en TradingView'>"
+            f"</a>",
+            unsafe_allow_html=True
+        )
+
+    st.divider()
+    st.markdown("#### 📈 Gráfico en Tiempo Real")
+    st.caption("Selecciona el activo que quieras seguir")
     activo = st.selectbox(
         "Selecciona activo",
         [
