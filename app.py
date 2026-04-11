@@ -292,9 +292,9 @@ st.markdown(f'''
 '''.format(LOGO_B64=LOGO_B64), unsafe_allow_html=True)
 
 # ── Planes y precios ──────────────────────────────────────────────────────────
-STRIPE_PRO      = "https://buy.stripe.com/test/price_1TL1KzPsUryntWKZx8JAyW8T"
-STRIPE_1TO1     = "https://buy.stripe.com/test/price_1TL1NRPsUryntWKZrtMbFmGw"
-STRIPE_MENTORING= "https://buy.stripe.com/test/price_1TL1O8PsUryntWKZX8mSOXuX"
+STRIPE_PRO      = "https://buy.stripe.com/test_fZu9AV7Nl1M52vqg3M5os00"
+STRIPE_1TO1     = "https://buy.stripe.com/test_eVq6oJebJbmF6LG4l45os01"
+STRIPE_MENTORING= "https://buy.stripe.com/test_8x2dRb6Jh0I1gmg2cW5os02"
 
 st.markdown(f"""
 <div style='display:flex;gap:12px;justify-content:center;flex-wrap:wrap;padding:8px 0 24px;'>
@@ -1252,5 +1252,3 @@ with tab_analysis:
                 file_name=f"MT5_{meta['alumno'].replace(' ','_')}.csv",
                 mime="text/csv"
             )
-
-
