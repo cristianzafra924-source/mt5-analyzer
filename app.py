@@ -291,7 +291,66 @@ st.markdown(f'''
 </div>
 '''.format(LOGO_B64=LOGO_B64), unsafe_allow_html=True)
 
-# ── Noticias (independiente del historial) ───────────────────────────────────
+# ── Planes y precios ──────────────────────────────────────────────────────────
+STRIPE_PRO      = "https://buy.stripe.com/test/price_1TL1KzPsUryntWKZx8JAyW8T"
+STRIPE_1TO1     = "https://buy.stripe.com/test/price_1TL1NRPsUryntWKZrtMbFmGw"
+STRIPE_MENTORING= "https://buy.stripe.com/test/price_1TL1O8PsUryntWKZX8mSOXuX"
+
+st.markdown(f"""
+<div style='display:flex;gap:12px;justify-content:center;flex-wrap:wrap;padding:8px 0 24px;'>
+
+  <div style='background:#0f1117;border:1px solid #1e2a3a;border-top:3px solid #3b82f6;
+       border-radius:4px;padding:20px;width:200px;text-align:center;'>
+    <div style='font-size:11px;font-weight:700;color:#3b82f6;letter-spacing:0.1em;margin-bottom:8px;'>PLAN PRO</div>
+    <div style='font-size:26px;font-weight:700;color:#f1f5f9;'>99€</div>
+    <div style='font-size:10px;color:#64748b;margin-bottom:14px;'>/mes</div>
+    <div style='font-size:11px;color:#94a3b8;margin-bottom:14px;line-height:1.6;'>
+      App completa · Canal Telegram · Análisis semanal · Alertas
+    </div>
+    <a href='{STRIPE_PRO}' target='_blank'
+       style='display:block;background:#3b82f6;color:#fff;font-weight:700;
+              font-size:12px;padding:8px;border-radius:4px;text-decoration:none;'>
+      Suscribirse
+    </a>
+  </div>
+
+  <div style='background:#0f1117;border:1px solid #1e2a3a;border-top:3px solid #f59e0b;
+       border-radius:4px;padding:20px;width:200px;text-align:center;'>
+    <div style='font-size:11px;font-weight:700;color:#f59e0b;letter-spacing:0.1em;margin-bottom:8px;'>SESIÓN 1TO1</div>
+    <div style='font-size:26px;font-weight:700;color:#f1f5f9;'>129€</div>
+    <div style='font-size:10px;color:#64748b;margin-bottom:14px;'>por sesión</div>
+    <div style='font-size:11px;color:#94a3b8;margin-bottom:14px;line-height:1.6;'>
+      1h Zoom · Revisión MT5 · Plan de mejora personal
+    </div>
+    <a href='{STRIPE_1TO1}' target='_blank'
+       style='display:block;background:#f59e0b;color:#0f172a;font-weight:700;
+              font-size:12px;padding:8px;border-radius:4px;text-decoration:none;'>
+      Reservar sesión
+    </a>
+  </div>
+
+  <div style='background:#0f1117;border:1px solid #2dd4bf;border-top:3px solid #2dd4bf;
+       border-radius:4px;padding:20px;width:200px;text-align:center;position:relative;'>
+    <div style='position:absolute;top:-10px;left:50%;transform:translateX(-50%);
+         background:#2dd4bf;color:#0f172a;font-size:9px;font-weight:700;
+         padding:2px 10px;border-radius:10px;'>PREMIUM</div>
+    <div style='font-size:11px;font-weight:700;color:#2dd4bf;letter-spacing:0.1em;margin-bottom:8px;'>MENTORING</div>
+    <div style='font-size:26px;font-weight:700;color:#f1f5f9;'>249€</div>
+    <div style='font-size:10px;color:#64748b;margin-bottom:14px;'>/mes · máx 15 alumnos</div>
+    <div style='font-size:11px;color:#94a3b8;margin-bottom:14px;line-height:1.6;'>
+      Todo Pro · Sesión mensual · Acceso directo Telegram
+    </div>
+    <a href='{STRIPE_MENTORING}' target='_blank'
+       style='display:block;background:#2dd4bf;color:#0f172a;font-weight:700;
+              font-size:12px;padding:8px;border-radius:4px;text-decoration:none;'>
+      Solicitar plaza
+    </a>
+  </div>
+
+</div>
+""", unsafe_allow_html=True)
+
+
 
 @st.cache_data(ttl=900)
 def fetch_news(week_offset=0):
@@ -1193,3 +1252,5 @@ with tab_analysis:
                 file_name=f"MT5_{meta['alumno'].replace(' ','_')}.csv",
                 mime="text/csv"
             )
+
+
